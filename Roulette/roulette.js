@@ -1,4 +1,4 @@
-let items = [];
+let items = ["A", "B", "C"];
 let angle = 0;
 
 function addItem() {
