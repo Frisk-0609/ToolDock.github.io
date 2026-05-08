@@ -19,7 +19,7 @@
   const resetButton = document.getElementById("reset");
 
   textarea.addEventListener("input", () => {count.textContent = textarea.value.length;});
-  resetButton.addEventListner("click", () => {textarea.value = ""; count.textContent = 0;});
+  resetButton.addEventListener("click", () => {textarea.value = ""; count.textContent = 0;});
 </script>
 
 </body>
