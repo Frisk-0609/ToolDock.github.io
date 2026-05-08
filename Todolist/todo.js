@@ -1,5 +1,3 @@
-let deleteMode = false;
-
 function addTodo() {
   const input = document.getElementById("todoInput");
   const text = input.value;
@@ -7,28 +5,25 @@ function addTodo() {
   if (text === "") return;
 
   const li = document.createElement("li");
-  li.textContent = text;
 
-  // 削除モード時はクリックで消す
-  li.addEventListener("click", function () { 
-    if (deleteMode) {
-      li.remove();
-    }
+  // テキスト部分
+  const span = document.createElement("span");
+  span.textContent = text;
+
+  // 削除ボタン
+  const btn = document.createElement("button");
+  btn.textContent = "×";
+
+  // 削除処理
+  btn.addEventListener("click", function () {
+    li.remove();
   });
+
+  // liに追加
+  li.appendChild(span);
+  li.appendChild(btn);
 
   document.getElementById("todoList").appendChild(li);
 
   input.value = "";
-}
-
-function toggleDeleteMode() {
-  deleteMode = !deleteMode;
-
-  const btn = document.querySelector("button[onclick='toggleDeleteMode()']");
-
-  if (deleteMode) {
-    btn.textContent = "削除モード：ON";
-  } else {
-    btn.textContent = "削除モード：OFF";
-  }
 }
