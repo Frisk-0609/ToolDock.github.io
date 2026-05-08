@@ -1,28 +1,19 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>Webルーレット</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
+<h1>Webルーレット</h1>
 
-  <h1>Webルーレット</h1>
+<h2 id="result">🎯 結果待ち</h2>
 
-  <!-- 結果を上に -->
-  <h2 id="result">🎯 結果待ち</h2>
+<div id="roulette-wrapper">
+  <canvas id="roulette" width="320" height="320"></canvas>
+  <div id="pointer"></div>
+</div>
 
-  <div id="roulette"></div>
-
-  <textarea id="itemInput">A
+<textarea id="itemInput">A
 B
 C</textarea>
 
-  <br>
+<br>
 
-  <button onclick="updateItems()">更新</button>
-  <button onclick="startRoulette()">スタート</button>
+<button onclick="updateItems()">更新</button>
+<button onclick="startRoulette()">スタート</button>
 
-  <script src="script.js"></script>
-</body>
-</html>
+<script src="script.js"></script>
