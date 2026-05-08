@@ -5,11 +5,11 @@
   margin: 30px auto;
   border-radius: 50%;
   border: 2px solid black;
-  transition: transform 0.1s linear;
 }
 
 .item {
   position: absolute;
+  transform: translate(-50%, -50%);
   width: 60px;
   text-align: center;
 }
