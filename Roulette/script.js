@@ -1,24 +1,31 @@
 let items = [];
+let colors = [];
 
-// 初期読み込み
 window.onload = function () {
   updateItems();
 };
 
-// テキストエリア → 配列
+// 入力更新
 function updateItems() {
   const input = document.getElementById("itemInput");
   items = input.value.split("\n").filter(v => v.trim() !== "");
 
+  generateColors();
   renderItems();
 }
 
-// 円形配置
+// 色生成（人数で分割）
+function generateColors() {
+  colors = items.map((_, i) => {
+    const hue = (360 / items.length) * i;
+    return `hsl(${hue}, 70%, 60%)`;
+  });
+}
+
+// 円形描画
 function renderItems() {
   const roulette = document.getElementById("roulette");
   roulette.innerHTML = "";
-
-  if (items.length === 0) return;
 
   const rect = roulette.getBoundingClientRect();
   const centerX = rect.width / 2;
@@ -38,11 +45,14 @@ function renderItems() {
     div.style.left = x + "px";
     div.style.top = y + "px";
 
+    // 色分け
+    div.style.color = colors[i];
+
     roulette.appendChild(div);
   });
 }
 
-// ルーレット回転
+// ルーレット
 function startRoulette() {
   if (items.length === 0) return;
 
