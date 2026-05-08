@@ -1,14 +1,29 @@
-<h1>円形ルーレット</h1>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Webルーレット</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-<input type="text" id="itemInput" placeholder="項目追加">
-<button onclick="addItem()">追加</button>
+  <h1>Webルーレット</h1>
 
-<br><br>
+  <!-- ルーレット本体 -->
+  <div id="roulette"></div>
 
-<button onclick="startRoulette()">スタート</button>
+  <!-- 入力（最初からA,B,C） -->
+  <textarea id="itemInput">A
+B
+C</textarea>
 
-<div id="roulette"></div>
+  <br>
 
-<h2 id="result"></h2>
+  <button onclick="updateItems()">更新</button>
+  <button onclick="startRoulette()">スタート</button>
 
-<script src="roulette.js"></script>
+  <h2 id="result"></h2>
+
+  <script src="script.js"></script>
+</body>
+</html>
