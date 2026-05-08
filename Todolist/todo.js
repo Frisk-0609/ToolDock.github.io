@@ -1,69 +1,79 @@
+let todos = [];
+
+// 追加
 function addTodo() {
   const input = document.getElementById("todoInput");
+  const dateInput = document.getElementById("todoDate");
+
   const text = input.value;
+  const date = dateInput.value;
 
-  if (text === "") return;
+  if (text === "" || date === "") return;
 
+  const todo = {
+    id: Date.now(),
+    text: text,
+    date: date
+  };
+
+  todos.push(todo);
+
+  renderTodo(todo);
+
+  input.value = "";
+  dateInput.value = "";
+
+  saveTodos();
+}
+
+// 描画
+function renderTodo(todo) {
   const li = document.createElement("li");
 
-  // テキスト部分
   const span = document.createElement("span");
-  span.textContent = text;
 
-  // 削除ボタン
+  const now = new Date();
+  const deadline = new Date(todo.date);
+  const diff = deadline - now;
+
+  let displayText = `${todo.text}（${todo.date}）`;
+
+  if (diff > 0 && diff < 24 * 60 * 60 * 1000) {
+    span.style.color = "red";
+    displayText = "！ " + displayText;
+  }
+
+  span.textContent = displayText;
+
   const btn = document.createElement("button");
   btn.textContent = "×";
 
-  // 削除処理
   btn.addEventListener("click", function () {
     li.remove();
+    todos = todos.filter(t => t.id !== todo.id);
+    saveTodos();
   });
 
-  // liに追加
   li.appendChild(span);
   li.appendChild(btn);
 
   document.getElementById("todoList").appendChild(li);
-
-  input.value = "";
-  saveTodos()
 }
 
+// 保存
 function saveTodos() {
-  const list = document.querySelectorAll("#todoList li span");
-  const todos = [];
-
-  list.forEach(item => {
-    todos.push(item.textContent);
-  });
-
   localStorage.setItem("todos", JSON.stringify(todos));
 }
 
+// 読み込み
 window.onload = function () {
   const data = localStorage.getItem("todos");
 
   if (!data) return;
 
-  const todos = JSON.parse(data);
+  todos = JSON.parse(data);
 
-  todos.forEach(text => {
-    const li = document.createElement("li");
-
-    const span = document.createElement("span");
-    span.textContent = text;
-
-    const btn = document.createElement("button");
-    btn.textContent = "×";
-
-    btn.addEventListener("click", function () {
-      li.remove();
-      saveTodos();
-    });
-
-    li.appendChild(span);
-    li.appendChild(btn);
-
-    document.getElementById("todoList").appendChild(li);
+  todos.forEach(todo => {
+    renderTodo(todo);
   });
 };
