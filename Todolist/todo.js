@@ -4,16 +4,25 @@ let todos = [];
 function addTodo() {
   const input = document.getElementById("todoInput");
   const dateInput = document.getElementById("todoDate");
+  const timeInput = document.getElementById("todoTime");
 
   const text = input.value;
   const date = dateInput.value;
+  const time = timeInput.value;
 
-  if (text === "" || date === "") return;
+  if (text === "") return;
+
+  let dateTime = null;
+
+  // 日付があるときだけ期限設定
+  if (date) {
+    dateTime = time ? `${date}T${time}` : `${date}T00:00`;
+  }
 
   const todo = {
     id: Date.now(),
     text: text,
-    date: date
+    date: dateTime
   };
 
   todos.push(todo);
@@ -22,6 +31,7 @@ function addTodo() {
 
   input.value = "";
   dateInput.value = "";
+  timeInput.value = "";
 
   saveTodos();
 }
@@ -32,15 +42,19 @@ function renderTodo(todo) {
 
   const span = document.createElement("span");
 
-  const now = new Date();
-  const deadline = new Date(todo.date);
-  const diff = deadline - now;
+  let displayText = todo.text;
 
-  let displayText = `${todo.text}（${todo.date}）`;
+  if (todo.date) {
+    const now = new Date();
+    const deadline = new Date(todo.date);
+    const diff = deadline - now;
 
-  if (diff > 0 && diff < 24 * 60 * 60 * 1000) {
-    span.style.color = "red";
-    displayText = "！ " + displayText;
+    displayText += `（${todo.date.replace("T", " ")}）`;
+
+    if (diff > 0 && diff < 24 * 60 * 60 * 1000) {
+      span.style.color = "red";
+      displayText = "！ " + displayText;
+    }
   }
 
   span.textContent = displayText;
