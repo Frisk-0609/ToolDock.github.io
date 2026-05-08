@@ -5,3 +5,14 @@ body {
 input {
   padding: 5px;
 }
+
+li {
+  display: flex;
+  justify-content: space-between;
+  width: 200px;
+  margin: 5px 0;
+}
+
+button {
+  cursor: pointer;
+}
