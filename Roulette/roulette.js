@@ -17,9 +17,10 @@ function renderItems() {
   const roulette = document.getElementById("roulette");
   roulette.innerHTML = "";
 
-  const radius = 120;
-  const centerX = 150;
-  const centerY = 150;
+  const rect = roulette.getBoundingClientRect();
+  const radius = rect.width / 2 - 40;
+  const centerX = rect.width / 2;
+  const centerY = rect.height / 2;
 
   items.forEach((item, i) => {
     const angle = (i / items.length) * 2 * Math.PI;
