@@ -3,26 +3,33 @@ body {
   text-align: center;
 }
 
-/* ルーレットを小さく */
-#roulette {
-  width: 320px;
-  height: 320px;
-  margin: 20px auto;
-  border-radius: 50%;
-  border: 3px solid black;
+#roulette-wrapper {
   position: relative;
+  width: 320px;
+  margin: 20px auto;
 }
 
-/* 文字を大きく */
-.item {
+/* canvas */
+#roulette {
+  border-radius: 50%;
+  border: 2px solid black;
+}
+
+/* 針 */
+#pointer {
   position: absolute;
-  transform: translate(-50%, -50%);
-  font-size: 18px;
-  font-weight: bold;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-bottom: 20px solid red;
 }
 
 textarea {
   width: 300px;
   height: 120px;
-  font-size: 16px;
 }
