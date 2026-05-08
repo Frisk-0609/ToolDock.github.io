@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ToolDock</title>
+</head>
+<body>
+
+  <h1>文字数カウント</h1>
+
+  <textarea placeholder="ここに文章を入力" style="width: 90%; height: 300px;"></textarea>
+  <button id = "reset">リセット</button>
+  <p>文字数：<span id = "count">0</span></p>
+
+<script>
+  const textarea = document.querySelector("textarea");
+  const count = document.getElementById("count");
+  const resetButton = document.getElementById("reset");
+
+  textarea.addEventListener("input", () => {count.textContent = textarea.value.length;});
+  resetButton.addEventListener("click", () => {textarea.value = ""; count.textContent = 0;});
+</script>
+
+</body>
+</html>
