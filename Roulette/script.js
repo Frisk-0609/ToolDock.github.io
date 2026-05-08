@@ -2,17 +2,20 @@ let items = [];
 let colors = [];
 let rotation = 0;
 
-const canvas = document.getElementById("roulette");
-const ctx = canvas.getContext("2d");
+let canvas;
+let ctx;
 
-// 初期化
+// 初期化（ここが超重要）
 window.onload = function () {
+  canvas = document.getElementById("roulette");
+  ctx = canvas.getContext("2d");
+
   updateItems();
 };
 
 ---
 
-# 入力更新
+# 更新処理
 
 function updateItems() {
   const input = document.getElementById("itemInput");
@@ -22,7 +25,10 @@ function updateItems() {
     .map(v => v.trim())
     .filter(v => v !== "");
 
-  if (items.length === 0) return;
+  if (items.length === 0) {
+    clearCanvas();
+    return;
+  }
 
   generateColors();
   draw();
@@ -30,7 +36,7 @@ function updateItems() {
 
 ---
 
-# 色生成（人数で自動分割）
+# 色生成（人数分割）
 
 function generateColors() {
   colors = items.map((_, i) => {
@@ -41,9 +47,11 @@ function generateColors() {
 
 ---
 
-# ルーレット描画（円グラフ）
+# 描画
 
 function draw() {
+  if (!ctx) return;
+
   const w = canvas.width;
   const h = canvas.height;
 
@@ -58,7 +66,6 @@ function draw() {
   for (let i = 0; i < items.length; i++) {
     const angle = (2 * Math.PI) / items.length;
 
-    // 扇形
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
 
@@ -77,7 +84,7 @@ function draw() {
     startAngle += angle;
   }
 
-  // 中心点（デバッグ用）
+  // 中心点
   ctx.beginPath();
   ctx.fillStyle = "black";
   ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
@@ -86,7 +93,7 @@ function draw() {
 
 ---
 
-# 回転ルーレット（減速付き）
+# ルーレット回転
 
 function startRoulette() {
   if (items.length === 0) return;
@@ -112,11 +119,20 @@ function startRoulette() {
 
 ---
 
-# 結果表示（簡易ランダム）
+# 結果
 
 function showResult() {
   const index = Math.floor(Math.random() * items.length);
 
   document.getElementById("result").textContent =
     "🎯 " + items[index];
+}
+
+---
+
+# クリア
+
+function clearCanvas() {
+  if (!ctx) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
