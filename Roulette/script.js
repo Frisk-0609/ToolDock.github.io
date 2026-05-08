@@ -1,79 +1,106 @@
 let items = [];
 let colors = [];
+let rotation = 0;
 
+const canvas = document.getElementById("roulette");
+const ctx = canvas.getContext("2d");
+
+// 初期化
 window.onload = function () {
   updateItems();
 };
 
-// 入力更新
+---
+
+# 入力更新
+
 function updateItems() {
   const input = document.getElementById("itemInput");
-  items = input.value.split("\n").filter(v => v.trim() !== "");
+
+  items = input.value
+    .split("\n")
+    .map(v => v.trim())
+    .filter(v => v !== "");
+
+  if (items.length === 0) return;
 
   generateColors();
-  renderItems();
+  draw();
 }
 
-// 色生成（人数で分割）
+---
+
+# 色生成（人数で自動分割）
+
 function generateColors() {
   colors = items.map((_, i) => {
     const hue = (360 / items.length) * i;
-    return `hsl(${hue}, 70%, 60%)`;
+    return `hsl(${hue}, 80%, 60%)`;
   });
 }
 
-// 円形描画
-function renderItems() {
-  const roulette = document.getElementById("roulette");
-  roulette.innerHTML = "";
+---
 
-  const rect = roulette.getBoundingClientRect();
-  const centerX = rect.width / 2;
-  const centerY = rect.height / 2;
-  const radius = rect.width / 2 - 40;
+# ルーレット描画（円グラフ）
 
-  items.forEach((item, i) => {
-    const angle = (i / items.length) * 2 * Math.PI;
+function draw() {
+  const w = canvas.width;
+  const h = canvas.height;
 
-    const x = centerX + radius * Math.cos(angle);
-    const y = centerY + radius * Math.sin(angle);
+  ctx.clearRect(0, 0, w, h);
 
-    const div = document.createElement("div");
-    div.className = "item";
-    div.textContent = item;
+  const centerX = w / 2;
+  const centerY = h / 2;
+  const radius = w / 2;
 
-    div.style.left = x + "px";
-    div.style.top = y + "px";
+  let startAngle = rotation;
 
-    // 色分け
-    div.style.color = colors[i];
+  for (let i = 0; i < items.length; i++) {
+    const angle = (2 * Math.PI) / items.length;
 
-    roulette.appendChild(div);
-  });
+    // 扇形
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+
+    ctx.fillStyle = colors[i];
+
+    ctx.arc(
+      centerX,
+      centerY,
+      radius,
+      startAngle,
+      startAngle + angle
+    );
+
+    ctx.fill();
+
+    startAngle += angle;
+  }
+
+  // 中心点（デバッグ用）
+  ctx.beginPath();
+  ctx.fillStyle = "black";
+  ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
+  ctx.fill();
 }
 
-// ルーレット
+---
+
+# 回転ルーレット（減速付き）
+
 function startRoulette() {
   if (items.length === 0) return;
 
-  let speed = 20;
-  let rotation = 0;
-  let count = 0;
+  let speed = 0.25;
 
   function spin() {
     rotation += speed;
+    speed *= 0.985;
 
-    document.getElementById("roulette").style.transform =
-      `rotate(${rotation}deg)`;
+    draw();
 
-    speed *= 0.97;
-
-    count++;
-
-    if (count > 180) {
-      const index = Math.floor(Math.random() * items.length);
-      document.getElementById("result").textContent =
-        "🎯 " + items[index];
+    if (speed < 0.001) {
+      showResult();
       return;
     }
 
@@ -81,4 +108,15 @@ function startRoulette() {
   }
 
   spin();
+}
+
+---
+
+# 結果表示（簡易ランダム）
+
+function showResult() {
+  const index = Math.floor(Math.random() * items.length);
+
+  document.getElementById("result").textContent =
+    "🎯 " + items[index];
 }
