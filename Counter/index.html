@@ -22,15 +22,15 @@
 
   textarea.addEventListener("input", () => {count.textContent = textarea.value.length;});
   textarea.addEventListener("input", () => {
-    const noSpace = textarea.value.rePlace(/\s/g,"");
+    const noSpace = textarea.value.replace(/\s/g,"");
     count_ns.textContent = noSpace.length;
   });
-  resetButton.addEventListener("click", () => {textarea.value = ""; count.textContent = 0;});
+  resetButton.addEventListener("click", () => {textarea.value = ""; count.textContent = 0; count_ns.textContent = 0;});
 </script>
 
 <ul>
   <li><a href="Todolist/">ToDoリスト</a></li>
-  <li><a href="Roulette/">Webルーレット</li>
+  <li><a href="Roulette/">Webルーレット</a></li>
 </ul>
 
 </body>
