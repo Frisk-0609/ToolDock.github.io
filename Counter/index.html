@@ -12,13 +12,19 @@
   <textarea placeholder="ここに文章を入力" style="width: 90%; height: 300px;"></textarea>
   <button id = "reset">リセット</button>
   <p>文字数：<span id = "count">0</span></p>
+  <p>文字数（スペースを含めない）：<span id = "count_ns">0</span></p>
 
 <script>
   const textarea = document.querySelector("textarea");
   const count = document.getElementById("count");
+  const count_ns = document.getElementById("count_ns");
   const resetButton = document.getElementById("reset");
 
   textarea.addEventListener("input", () => {count.textContent = textarea.value.length;});
+  textarea.addEventListener("input", () => {
+    const noSpace = textarea.Value.rePlace(/\s/g,"");
+    count_ns.textContent = noSpace.length;
+  });
   resetButton.addEventListener("click", () => {textarea.value = ""; count.textContent = 0;});
 </script>
 
