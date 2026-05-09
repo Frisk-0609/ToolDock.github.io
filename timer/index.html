@@ -12,9 +12,14 @@
 
     <div id="timerApp">
 
-  <div id="timerInput">
-    <input type="number" id="minutes" placeholder="分">
-    <input type="number" id="seconds" placeholder="秒">
+  <select id="modeSelect" onchange="ChangeMode()">
+  <option value="stopwatch">ストップウォッチ</option>
+  <option value="timer">タイマー</option>
+  </select>
+
+  <div id="timerInput" style="display:none;">
+  <input type="number" id="minutes" placeholder="分">
+  <input type="number" id="seconds" placeholder="秒">
   </div>
 
   <p id="timerString">00:00</p>
