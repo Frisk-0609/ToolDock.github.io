@@ -1,86 +1,147 @@
-// タイマーの時間を表示する場所を覚えておく変数
 let timerStringDOM;
 
-// 開始時間を記録しておく変数
 let startTime;
-
-// タイマーを識別するID
 let timerId = null;
 
-// 現在の経過時間を記録しておく変数
 let currentTimerTime = 0;
 
-// ここに記述したイベントは、htmlが完全に読み込まれた後から実行される。
-window.onload = function() {
-  timerStringDOM = document.getElementById('timerString');
+// モード
+let mode = "stopwatch";
 
-  // 開始する前は00:00と表示
-  timerStringDOM.innerHTML = '00:00'
+// タイマー用制限時間
+let limitTime = 0;
+
+window.onload = function () {
+  timerStringDOM = document.getElementById("timerString");
+  timerStringDOM.textContent = "00:00";
 };
 
-// ミリ秒を経過時間の文字列に直す関数
+// ミリ秒 → mm:ss
 function msecToSecString(time) {
-  // 単位をミリ秒から秒へ変換
+
+  if (time < 0) {
+    time = 0;
+  }
+
   time = Math.floor(time / 1000);
 
-  // 秒数
   const seconds = time % 60;
-  // 分数
   const minutes = Math.floor(time / 60);
 
-  // 取得した数値をも2桁の文字列になるように、必要に応じて0を補う
-  const secondStr = (seconds < 10 ? '0' : '') + String(seconds);
-  const minutesStr = (minutes < 10 ? '0' : '') + String(minutes);
+  const secondStr = (seconds < 10 ? "0" : "") + String(seconds);
+  const minutesStr = (minutes < 10 ? "0" : "") + String(minutes);
 
   return minutesStr + ":" + secondStr;
 }
 
-// タイマーの時刻を更新する処理
+// モード変更
+function ChangeMode() {
+
+  const select = document.getElementById("modeSelect");
+
+  mode = select.value;
+
+  OnResetButtonClick();
+
+  // タイマーモードだけ入力欄表示
+  const timerInput = document.getElementById("timerInput");
+
+  if (mode === "timer") {
+    timerInput.style.display = "block";
+  }
+  else {
+    timerInput.style.display = "none";
+  }
+}
+
+// 更新
 function UpdateTimer() {
-  // 現在の時刻を取得
+
   const nowTime = new Date().getTime();
 
-  // タイマーの表示を更新
-  timerStringDOM.innerHTML = msecToSecString(nowTime - startTime);
-}
+  // ストップウォッチ
+  if (mode === "stopwatch") {
 
-// スタートボタンが押されたときの処理
-function OnStartButtonClick() {
-  // すでにタイマーが動いていないことを確認する
-  if(timerId == null) {
-    // 変数startTimeに開始時間を所持しておく
-    // 現在の時間は、基準時からの経過時間(単位：ミリ秒)
-    startTime = new Date().getTime() - currentTimerTime;
-
-    // 1秒(=1000ミリ秒)ごとにタイマーを更新する処理を記述する
-    timerId = setInterval(UpdateTimer, 1000);
-  }
-}
-
-// ストップボタンが押されたときの処理
-function OnStopButtonClick() {
-  // すでにタイマーが動いていることを確認する
-  if(timerId != null) {
-    // タイマーIDで指定したタイマーをストップする
-    clearInterval(timerId);
-    timerId = null;
-
-    // 現在までの経過時間を記録してタイマーの表示を更新
-    const nowTime = new Date().getTime();
     currentTimerTime = nowTime - startTime;
 
-    timerStringDOM.innerHTML = msecToSecString(currentTimerTime);
   }
+
+  // タイマー
+  else if (mode === "timer") {
+
+    currentTimerTime = limitTime - (nowTime - startTime);
+
+    // 0になったら停止
+    if (currentTimerTime <= 0) {
+
+      currentTimerTime = 0;
+
+      clearInterval(timerId);
+
+      timerId = null;
+    }
+  }
+
+  timerStringDOM.textContent = msecToSecString(currentTimerTime);
 }
 
-// リセットボタンが押されたときの処理
+// スタート
+function OnStartButtonClick() {
+
+  // 既に動いているなら何もしない
+  if (timerId != null) {
+    return;
+  }
+
+  // タイマーモード
+  if (mode === "timer") {
+
+    // 初回スタート時
+    if (currentTimerTime === 0) {
+
+      const minutes =
+        parseInt(document.getElementById("minutes").value) || 0;
+
+      const seconds =
+        parseInt(document.getElementById("seconds").value) || 0;
+
+      limitTime = (minutes * 60 + seconds) * 1000;
+
+      currentTimerTime = limitTime;
+    }
+
+    startTime = new Date().getTime()
+      - (limitTime - currentTimerTime);
+  }
+
+  // ストップウォッチ
+  else {
+
+    startTime = new Date().getTime() - currentTimerTime;
+
+  }
+
+  timerId = setInterval(UpdateTimer, 100);
+}
+
+// ストップ
+function OnStopButtonClick() {
+
+  if (timerId == null) {
+    return;
+  }
+
+  clearInterval(timerId);
+
+  timerId = null;
+}
+
+// リセット
 function OnResetButtonClick() {
-  // 一度タイマーを止める
+
   OnStopButtonClick();
 
-  // 表示時間を00:00にする
-  timerStringDOM.innerHTML = '00:00';
-
-  // 経過時間をリセット
   currentTimerTime = 0;
+
+  timerStringDOM.textContent = "00:00";
 }
