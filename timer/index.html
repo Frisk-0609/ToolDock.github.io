@@ -6,10 +6,9 @@
 <title>ストップウォッチ＆タイマー</title>
 
 <style>
-
 body {
     font-family: sans-serif;
-    background-color: white;
+    background: white;
     color: black;
     text-align: center;
     margin: 0;
@@ -31,59 +30,36 @@ h1 {
 
 .time {
     font-size: 60px;
-    margin: 30px 0;
     font-weight: bold;
+    margin: 30px 0;
 }
 
 button {
     font-size: 16px;
     padding: 10px 16px;
     margin: 5px;
-    cursor: pointer;
 }
 
 .active {
     font-weight: bold;
 }
 
-.timer-setting {
-    margin-bottom: 20px;
-}
-
 .timer-setting input {
     width: 70px;
-    font-size: 16px;
     padding: 5px;
+    font-size: 16px;
     text-align: center;
-    margin: 0 5px;
 }
 
-.lap-area {
-    margin-top: 30px;
-    text-align: left;
-    border-top: 1px solid #ccc;
-    padding-top: 10px;
+.flash {
+    animation: flash 0.3s 3;
 }
 
-.lap {
-    padding: 5px 0;
-    border-bottom: 1px solid #ddd;
+@keyframes flash {
+    0% { background: white; }
+    50% { background: black; color: white; }
+    100% { background: white; color: black; }
 }
-
-.description {
-    margin-top: 40px;
-    text-align: left;
-    line-height: 1.8;
-    border-top: 1px solid #ccc;
-    padding-top: 20px;
-    font-size: 15px;
-}
-
-.description h2 {
-    font-size: 20px;
-    margin-bottom: 10px;
-}
-
 </style>
 </head>
 
@@ -91,52 +67,26 @@ button {
 
 <div class="container">
 
-    <h1>ストップウォッチ＆タイマー</h1>
+<h1>ストップウォッチ＆タイマー</h1>
 
-    <div class="mode-buttons">
-        <button id="stopwatchMode" class="active">ストップウォッチ</button>
-        <button id="timerMode">タイマー</button>
-    </div>
+<div class="mode-buttons">
+    <button id="stopwatchBtn" class="active">ストップウォッチ</button>
+    <button id="timerBtn">タイマー</button>
+</div>
 
-    <div class="time" id="display">00:00:00</div>
+<div class="time" id="display">00:00:00</div>
 
-    <div class="timer-setting" id="timerSetting" style="display:none;">
+<div class="timer-setting" id="timerSetting" style="display:none;">
+    <input id="h" type="number" value="0">時
+    <input id="m" type="number" value="1">分
+    <input id="s" type="number" value="0">秒
+</div>
 
-        <input type="number" id="hoursInput" min="0" value="0">
-        時
-
-        <input type="number" id="minutesInput" min="0" value="1">
-        分
-
-        <input type="number" id="secondsInput" min="0" value="0">
-        秒
-
-    </div>
-
-    <div>
-        <button id="startBtn">開始</button>
-        <button id="pauseBtn">停止</button>
-        <button id="resetBtn">リセット</button>
-        <button id="lapBtn">ラップ</button>
-    </div>
-
-    <div class="lap-area" id="lapArea"></div>
-
-    <div class="description">
-
-        <h2>このサイトについて</h2>
-
-        <p>
-            このサイトでは、ストップウォッチとタイマーを利用できます。
-            モード切替によって用途に応じた時間管理が可能です。
-        </p>
-
-        <p>
-            タイマーは「時間・分・秒」を指定できます。
-            タイマー終了時には通知音とアラートが表示されます。
-        </p>
-
-    </div>
+<div>
+    <button id="start">開始</button>
+    <button id="pause">停止</button>
+    <button id="reset">リセット</button>
+</div>
 
 </div>
 
@@ -146,216 +96,162 @@ let mode = "stopwatch";
 
 let timer = null;
 
-let elapsed = 0;
 let startTime = 0;
+let endTime = 0;
 
-let remaining = 0;
+let audioCtx = null;
 
 const display = document.getElementById("display");
-const lapArea = document.getElementById("lapArea");
+const body = document.body;
 
-const stopwatchModeBtn = document.getElementById("stopwatchMode");
-const timerModeBtn = document.getElementById("timerMode");
-
+const stopwatchBtn = document.getElementById("stopwatchBtn");
+const timerBtn = document.getElementById("timerBtn");
 const timerSetting = document.getElementById("timerSetting");
 
-const hoursInput = document.getElementById("hoursInput");
-const minutesInput = document.getElementById("minutesInput");
-const secondsInput = document.getElementById("secondsInput");
-
-function formatTime(ms) {
-
-    const totalSeconds = Math.floor(ms / 1000);
-
-    const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-
-    const minutes = String(
-        Math.floor((totalSeconds % 3600) / 60)
-    ).padStart(2, '0');
-
-    const seconds = String(
-        totalSeconds % 60
-    ).padStart(2, '0');
-
-    return `${hours}:${minutes}:${seconds}`;
+function format(ms) {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    const h = String(Math.floor(s / 3600)).padStart(2,"0");
+    const m = String(Math.floor((s % 3600)/60)).padStart(2,"0");
+    const sec = String(s % 60).padStart(2,"0");
+    return `${h}:${m}:${sec}`;
 }
 
-function updateDisplay() {
+function ensureAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === "suspended") audioCtx.resume();
+}
 
-    if (mode === "stopwatch") {
-        display.textContent = formatTime(elapsed);
-    } else {
-        display.textContent = formatTime(remaining);
+function beep() {
+    ensureAudio();
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = "square";
+    osc.frequency.value = 880;
+
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.01);
+    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 1);
+}
+
+function vibrate() {
+    if (navigator.vibrate) {
+        navigator.vibrate([200,100,200,100,300]);
     }
 }
 
-function switchMode(newMode) {
+function flash() {
+    body.classList.add("flash");
+    setTimeout(() => body.classList.remove("flash"), 900);
+}
+
+function update() {
+    const now = Date.now();
+
+    if (mode === "stopwatch") {
+        display.textContent = format(now - startTime);
+    } else {
+        display.textContent = format(endTime - now);
+    }
+}
+
+function setMode(m) {
+
+    clearInterval(timer);
+    timer = null;
+
+    mode = m;
+
+    if (mode === "stopwatch") {
+        stopwatchBtn.classList.add("active");
+        timerBtn.classList.remove("active");
+        timerSetting.style.display = "none";
+    } else {
+        timerBtn.classList.add("active");
+        stopwatchBtn.classList.remove("active");
+        timerSetting.style.display = "block";
+    }
+
+    display.textContent = "00:00:00";
+}
+
+stopwatchBtn.onclick = () => setMode("stopwatch");
+timerBtn.onclick = () => setMode("timer");
+
+function startStopwatch() {
+    startTime = Date.now();
+    clearInterval(timer);
+    timer = setInterval(update, 30);
+}
+
+function startTimer() {
+
+    const h = Number(document.getElementById("h").value);
+    const m = Number(document.getElementById("m").value);
+    const s = Number(document.getElementById("s").value);
+
+    const duration = (h*3600 + m*60 + s) * 1000;
+
+    if (duration <= 0) return;
+
+    startTime = Date.now();
+    endTime = startTime + duration;
 
     clearInterval(timer);
 
-    timer = null;
+    timer = setInterval(() => {
 
-    elapsed = 0;
-    remaining = 0;
+        const now = Date.now();
+        const remaining = endTime - now;
 
-    updateDisplay();
-
-    lapArea.innerHTML = "";
-
-    mode = newMode;
-
-    if (mode === "stopwatch") {
-
-        stopwatchModeBtn.classList.add("active");
-        timerModeBtn.classList.remove("active");
-
-        timerSetting.style.display = "none";
-
-        document.getElementById("lapBtn").style.display = "inline-block";
-
-    } else {
-
-        timerModeBtn.classList.add("active");
-        stopwatchModeBtn.classList.remove("active");
-
-        timerSetting.style.display = "block";
-
-        document.getElementById("lapBtn").style.display = "none";
-    }
-}
-
-stopwatchModeBtn.onclick = () => switchMode("stopwatch");
-timerModeBtn.onclick = () => switchMode("timer");
-
-document.getElementById("startBtn").onclick = () => {
-
-    if (timer) return;
-
-    if (mode === "stopwatch") {
-
-        startTime = Date.now() - elapsed;
-
-        timer = setInterval(() => {
-
-            elapsed = Date.now() - startTime;
-
-            updateDisplay();
-
-        }, 10);
-
-    } else {
+        update();
 
         if (remaining <= 0) {
 
-            const hours = Number(hoursInput.value);
-            const minutes = Number(minutesInput.value);
-            const seconds = Number(secondsInput.value);
+            clearInterval(timer);
+            timer = null;
 
-            remaining =
-                (hours * 3600 +
-                 minutes * 60 +
-                 seconds) * 1000;
-        }
+            display.textContent = "00:00:00";
 
-        if (remaining <= 0) {
-            alert("時間を設定してください。");
-            return;
-        }
+            flash();
+            vibrate();
 
-        const endTime = Date.now() + remaining;
-
-        timer = setInterval(() => {
-
-            remaining = endTime - Date.now();
-
-            if (remaining <= 0) {
-
-                remaining = 0;
-
-                clearInterval(timer);
-
-                timer = null;
-
-                updateDisplay();
-
-                playBeep();
-
-                alert("タイマー終了！");
-                return;
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => beep(), i * 150);
             }
 
-            updateDisplay();
+        }
 
-        }, 10);
-    }
-};
-
-document.getElementById("pauseBtn").onclick = () => {
-
-    clearInterval(timer);
-
-    timer = null;
-};
-
-document.getElementById("resetBtn").onclick = () => {
-
-    clearInterval(timer);
-
-    timer = null;
-
-    elapsed = 0;
-    remaining = 0;
-
-    updateDisplay();
-
-    lapArea.innerHTML = "";
-};
-
-document.getElementById("lapBtn").onclick = () => {
-
-    if (mode !== "stopwatch") return;
-
-    const lap = document.createElement("div");
-
-    lap.className = "lap";
-
-    const count = lapArea.children.length + 1;
-
-    lap.textContent = `Lap ${count} : ${formatTime(elapsed)}`;
-
-    lapArea.prepend(lap);
-};
-
-function playBeep() {
-
-    const audioContext =
-        new (window.AudioContext || window.webkitAudioContext)();
-
-    const oscillator = audioContext.createOscillator();
-
-    const gainNode = audioContext.createGain();
-
-    oscillator.connect(gainNode);
-
-    gainNode.connect(audioContext.destination);
-
-    oscillator.type = "sine";
-
-    oscillator.frequency.value = 880;
-
-    oscillator.start();
-
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-
-    gainNode.gain.exponentialRampToValueAtTime(
-        0.001,
-        audioContext.currentTime + 1
-    );
-
-    oscillator.stop(audioContext.currentTime + 1);
+    }, 30);
 }
 
-updateDisplay();
+document.getElementById("start").onclick = () => {
+    ensureAudio();
+    if (mode === "stopwatch") startStopwatch();
+    else startTimer();
+};
+
+document.getElementById("pause").onclick = () => {
+    clearInterval(timer);
+    timer = null;
+};
+
+document.getElementById("reset").onclick = () => {
+    clearInterval(timer);
+    timer = null;
+    display.textContent = "00:00:00";
+};
+
+setMode("stopwatch");
 
 </script>
 
