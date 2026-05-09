@@ -10,22 +10,22 @@
   <body>
     <h1>Webタイマー</h1>
 
-    <!-- この中にタイマーを書いていきます。 -->
     <div id="timerApp">
-      <!-- タイマーの時間を表示する場所
-           具体的な中身は、後からJSで生成していく -->
-      <p id="timerString">00:00</p>
 
-      <!-- タイマーをスタート/ストップ/リセット
-            するボタンを置く場所 -->
-    <div id="timerButton">
-        <!-- onClick=" ~~~ "と言うところで、
-              ボタンを押したときに呼ばれる関数を指定する -->
-        <input type="button" value="スタート" onClick="OnStartButtonClick();">
-        <input type="button" value="ストップ" onClick="OnStopButtonClick();">
-        <input type="button" value="リセット" onClick="OnResetButtonClick();">
-      </div>
-    </div>
+  <div id="timerInput">
+    <input type="number" id="minutes" placeholder="分">
+    <input type="number" id="seconds" placeholder="秒">
+  </div>
+
+  <p id="timerString">00:00</p>
+
+  <div id="timerButton">
+    <input type="button" value="スタート" onClick="OnStartButtonClick();">
+    <input type="button" value="ストップ" onClick="OnStopButtonClick();">
+    <input type="button" value="リセット" onClick="OnResetButtonClick();">
+  </div>
+
+</div>
 
   </body>
 </html>
