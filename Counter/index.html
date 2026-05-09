@@ -9,10 +9,13 @@
 
   <h1>文字数カウント</h1>
 
-  <textarea placeholder="ここに文章を入力" style="width: 90%; height: 300px;"></textarea>
-  <button id = "reset">リセット</button>
-  <p>文字数：<span id = "count">0</span></p>
-  <p>文字数（改行・スペースを含めない）：<span id = "count_ns">0</span></p>
+  <textarea placeholder="ここに文章を入力"
+            style="width: 90%; height: 300px;"></textarea>
+
+  <button id="reset">リセット</button>
+
+  <p>文字数：<span id="count">0</span></p>
+  <p>文字数（改行・スペースを含めない）：<span id="count_ns">0</span></p>
 
 <script>
   const textarea = document.querySelector("textarea");
@@ -20,12 +23,21 @@
   const count_ns = document.getElementById("count_ns");
   const resetButton = document.getElementById("reset");
 
-  textarea.addEventListener("input", () => {count.textContent = textarea.value.length;});
   textarea.addEventListener("input", () => {
-    const noSpace = textarea.value.replace(/\s/g,"");
+
+    // 通常文字数
+    count.textContent = textarea.value.length;
+
+    // 空白・改行なし文字数
+    const noSpace = textarea.value.replace(/\s/g, "");
     count_ns.textContent = noSpace.length;
   });
-  resetButton.addEventListener("click", () => {textarea.value = ""; count.textContent = 0; count_ns.textContent = 0;});
+
+  resetButton.addEventListener("click", () => {
+    textarea.value = "";
+    count.textContent = 0;
+    count_ns.textContent = 0;
+  });
 </script>
 
 <ul>
