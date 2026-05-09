@@ -1,125 +1,89 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
- <link rel="icon"
-      href="../favicon.ico">
-  <meta charset="UTF-8">
-  <link rel="stylesheet"
-      href="../style.css">
-  <meta name="description" content="シンプルなタイマー・ストップウォッチアプリ。ブラウザだけで動作します。">
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ストップウォッチ＆タイマー</title>
 
 <style>
-    * {
-        box-sizing: border-box;
-    }
 
-    body {
-        margin: 0;
-        font-family: sans-serif;
-        background: linear-gradient(135deg, #1e293b, #0f172a);
-        color: white;
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
+body {
+    font-family: sans-serif;
+    background-color: white;
+    color: black;
+    text-align: center;
+    margin: 0;
+    padding: 30px;
+}
 
-    .container {
-        width: 90%;
-        max-width: 500px;
-        background: rgba(255,255,255,0.08);
-        backdrop-filter: blur(10px);
-        border-radius: 24px;
-        padding: 30px;
-        text-align: center;
-        box-shadow: 0 0 25px rgba(0,0,0,0.4);
-    }
+.container {
+    max-width: 550px;
+    margin: auto;
+}
 
-    h1 {
-        margin-top: 0;
-        margin-bottom: 20px;
-    }
+h1 {
+    margin-bottom: 20px;
+}
 
-    .mode-buttons {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 25px;
-    }
+.mode-buttons {
+    margin-bottom: 20px;
+}
 
-    .mode-buttons button {
-        flex: 1;
-    }
+.time {
+    font-size: 60px;
+    margin: 30px 0;
+    font-weight: bold;
+}
 
-    .time {
-        font-size: 4rem;
-        font-weight: bold;
-        margin: 25px 0;
-        letter-spacing: 3px;
-    }
+button {
+    font-size: 16px;
+    padding: 10px 16px;
+    margin: 5px;
+    cursor: pointer;
+}
 
-    .buttons {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        justify-content: center;
-        margin-top: 20px;
-    }
+.active {
+    font-weight: bold;
+}
 
-    button {
-        border: none;
-        padding: 14px 20px;
-        border-radius: 12px;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: 0.2s;
-        background: #334155;
-        color: white;
-    }
+.timer-setting {
+    margin-bottom: 20px;
+}
 
-    button:hover {
-        transform: scale(1.05);
-        background: #475569;
-    }
+.timer-setting input {
+    width: 70px;
+    font-size: 16px;
+    padding: 5px;
+    text-align: center;
+    margin: 0 5px;
+}
 
-    .active {
-        background: #0ea5e9 !important;
-    }
+.lap-area {
+    margin-top: 30px;
+    text-align: left;
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+}
 
-    .timer-setting {
-        margin-top: 15px;
-    }
+.lap {
+    padding: 5px 0;
+    border-bottom: 1px solid #ddd;
+}
 
-    input {
-        width: 80px;
-        padding: 10px;
-        border-radius: 10px;
-        border: none;
-        text-align: center;
-        font-size: 1rem;
-    }
+.description {
+    margin-top: 40px;
+    text-align: left;
+    line-height: 1.8;
+    border-top: 1px solid #ccc;
+    padding-top: 20px;
+    font-size: 15px;
+}
 
-    .lap-area {
-        margin-top: 20px;
-        max-height: 180px;
-        overflow-y: auto;
-        text-align: left;
-        background: rgba(255,255,255,0.05);
-        border-radius: 12px;
-        padding: 10px;
-    }
+.description h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
 
-    .lap {
-        padding: 5px 0;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-
-    @media (max-width: 500px) {
-        .time {
-            font-size: 2.8rem;
-        }
-    }
 </style>
 </head>
 
@@ -127,7 +91,7 @@
 
 <div class="container">
 
-    <h1>⏱ ストップウォッチ＆タイマー</h1>
+    <h1>ストップウォッチ＆タイマー</h1>
 
     <div class="mode-buttons">
         <button id="stopwatchMode" class="active">ストップウォッチ</button>
@@ -137,11 +101,19 @@
     <div class="time" id="display">00:00:00</div>
 
     <div class="timer-setting" id="timerSetting" style="display:none;">
-        <input type="number" id="minutesInput" min="1" value="1">
-        <span>分</span>
+
+        <input type="number" id="hoursInput" min="0" value="0">
+        時
+
+        <input type="number" id="minutesInput" min="0" value="1">
+        分
+
+        <input type="number" id="secondsInput" min="0" value="0">
+        秒
+
     </div>
 
-    <div class="buttons">
+    <div>
         <button id="startBtn">開始</button>
         <button id="pauseBtn">停止</button>
         <button id="resetBtn">リセット</button>
@@ -149,6 +121,27 @@
     </div>
 
     <div class="lap-area" id="lapArea"></div>
+
+    <div class="description">
+
+        <h2>このサイトについて</h2>
+
+        <p>
+            このサイトでは、ストップウォッチとタイマーを利用できます。
+            モード切替によって用途に応じた時間管理が可能です。
+        </p>
+
+        <p>
+            タイマーは「時間・分・秒」を指定できます。
+            タイマー終了時には通知音とアラートが表示されます。
+        </p>
+
+        <p>
+            HTML・CSS・JavaScriptのみで構成されており、
+            一つのHTMLファイルだけで動作します。
+        </p>
+
+    </div>
 
 </div>
 
@@ -170,19 +163,30 @@ const stopwatchModeBtn = document.getElementById("stopwatchMode");
 const timerModeBtn = document.getElementById("timerMode");
 
 const timerSetting = document.getElementById("timerSetting");
+
+const hoursInput = document.getElementById("hoursInput");
 const minutesInput = document.getElementById("minutesInput");
+const secondsInput = document.getElementById("secondsInput");
 
 function formatTime(ms) {
+
     const totalSeconds = Math.floor(ms / 1000);
 
     const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-    const seconds = String(totalSeconds % 60).padStart(2, '0');
+
+    const minutes = String(
+        Math.floor((totalSeconds % 3600) / 60)
+    ).padStart(2, '0');
+
+    const seconds = String(
+        totalSeconds % 60
+    ).padStart(2, '0');
 
     return `${hours}:${minutes}:${seconds}`;
 }
 
 function updateDisplay() {
+
     if (mode === "stopwatch") {
         display.textContent = formatTime(elapsed);
     } else {
@@ -206,14 +210,21 @@ function switchMode(newMode) {
     mode = newMode;
 
     if (mode === "stopwatch") {
+
         stopwatchModeBtn.classList.add("active");
         timerModeBtn.classList.remove("active");
+
         timerSetting.style.display = "none";
+
         document.getElementById("lapBtn").style.display = "inline-block";
+
     } else {
+
         timerModeBtn.classList.add("active");
         stopwatchModeBtn.classList.remove("active");
+
         timerSetting.style.display = "block";
+
         document.getElementById("lapBtn").style.display = "none";
     }
 }
@@ -230,14 +241,30 @@ document.getElementById("startBtn").onclick = () => {
         startTime = Date.now() - elapsed;
 
         timer = setInterval(() => {
+
             elapsed = Date.now() - startTime;
+
             updateDisplay();
+
         }, 10);
 
     } else {
 
         if (remaining <= 0) {
-            remaining = Number(minutesInput.value) * 60 * 1000;
+
+            const hours = Number(hoursInput.value);
+            const minutes = Number(minutesInput.value);
+            const seconds = Number(secondsInput.value);
+
+            remaining =
+                (hours * 3600 +
+                 minutes * 60 +
+                 seconds) * 1000;
+        }
+
+        if (remaining <= 0) {
+            alert("時間を設定してください。");
+            return;
         }
 
         const endTime = Date.now() + remaining;
@@ -247,11 +274,16 @@ document.getElementById("startBtn").onclick = () => {
             remaining = endTime - Date.now();
 
             if (remaining <= 0) {
+
                 remaining = 0;
+
                 clearInterval(timer);
+
                 timer = null;
 
                 updateDisplay();
+
+                playBeep();
 
                 alert("タイマー終了！");
                 return;
@@ -264,13 +296,16 @@ document.getElementById("startBtn").onclick = () => {
 };
 
 document.getElementById("pauseBtn").onclick = () => {
+
     clearInterval(timer);
+
     timer = null;
 };
 
 document.getElementById("resetBtn").onclick = () => {
 
     clearInterval(timer);
+
     timer = null;
 
     elapsed = 0;
@@ -286,6 +321,7 @@ document.getElementById("lapBtn").onclick = () => {
     if (mode !== "stopwatch") return;
 
     const lap = document.createElement("div");
+
     lap.className = "lap";
 
     const count = lapArea.children.length + 1;
@@ -294,6 +330,35 @@ document.getElementById("lapBtn").onclick = () => {
 
     lapArea.prepend(lap);
 };
+
+function playBeep() {
+
+    const audioContext =
+        new (window.AudioContext || window.webkitAudioContext)();
+
+    const oscillator = audioContext.createOscillator();
+
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+
+    gainNode.connect(audioContext.destination);
+
+    oscillator.type = "sine";
+
+    oscillator.frequency.value = 880;
+
+    oscillator.start();
+
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+
+    gainNode.gain.exponentialRampToValueAtTime(
+        0.001,
+        audioContext.currentTime + 1
+    );
+
+    oscillator.stop(audioContext.currentTime + 1);
+}
 
 updateDisplay();
 
