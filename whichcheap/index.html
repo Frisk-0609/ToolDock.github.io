@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  <link rel="icon"
+      href="../favicon.ico">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>どっちが安い？ツール</title>
+  <link rel="stylesheet"
+      href="../style.css">
+  <meta name="description" content="複数の商品のコスパを比較計算できるツール。完全Web・ブラウザだけで動作します。">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>どっちが安い？コスパ計算ツール | ToolDock</title>
 
   <style>
     body {
@@ -213,9 +220,9 @@
         bestRow.classList.add("best");
 
         result.innerHTML = `
-          🏆 最もコスパが良い商品は
+          💰 最もコスパが良い商品は
           <strong>${bestName}</strong>
-          です！<br><br>
+          です。<br><br>
           1単位あたり
           <strong>${bestCost.toFixed(3)} 円</strong>
         `;
