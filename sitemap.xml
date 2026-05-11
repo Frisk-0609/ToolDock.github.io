@@ -1,29 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
   <url>
-    <loc>
-      https://tooldock.github.io/
-    </loc>
+    <loc>https://tooldock.github.io/</loc>
   </url>
 
   <url>
-    <loc>
-      https://tooldock.github.io/counter/
-    </loc>
+    <loc>https://tooldock.github.io/counter/</loc>
   </url>
 
   <url>
-    <loc>
-      https://tooldock.github.io/roulette/
-    </loc>
+    <loc>https://tooldock.github.io/roulette/</loc>
   </url>
 
   <url>
-    <loc>
-      https://tooldock.github.io/todolist/
-    </loc>
+    <loc>https://tooldock.github.io/todolist/</loc>
+  </url>
+
+  <url>
+    <loc>https://tooldock.github.io/kintoku/</loc>
+  </url>
+
+  <url>
+    <loc>https://tooldock.github.io/genkoyosi/</loc>
+  </url>
+
+  <url>
+    <loc>https://tooldock.github.io/whichcheap/</loc>
+  </url>
+
+  <url>
+    <loc>https://tooldock.github.io/timer/</loc>
+  </url>
+
+  <url>
+    <loc>https://tooldock.github.io/about/</loc>
+  </url>
+
+  <url>
+    <loc>https://tooldock.github.io/privacy/</loc>
+  </url>
+
+  <url>
+    <loc>https://tooldock.github.io/contact/</loc>
   </url>
 
 </urlset>
