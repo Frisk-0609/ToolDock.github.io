@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>PDF・画像変換ツール | ToolDock</title>
+<meta name="description" content="画像をまとめてPDF化、PDFを画像へ変換できる無料オンラインツール。ドラッグ＆ドロップ対応、レポート提出向け、インストール不要。">
+<meta name="keywords" content="PDF変換,画像PDF化,PDF画像変換,画像結合,レポート提出,無料ツール,ToolDock">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<style>
+body {
+    font-family: sans-serif;
+    background: #f5f7fb;
+    margin: 0;
+    padding: 20px;
+    color: #222;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.section {
+    background: white;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.drop-zone {
+    border: 3px dashed #888;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    background: #fafafa;
+    transition: 0.2s;
+    cursor: pointer;
+}
+
+.drop-zone.dragover {
+    background: #e8f0ff;
+    border-color: #3366ff;
+}
+
+.preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.preview img {
+    width: 140px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+}
+
+button {
+    background: #3366ff;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+button:hover {
+    background: #2244cc;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+.info {
+    margin-top: 10px;
+    color: #666;
+    font-size: 14px;
+}
+
+@media(max-width: 700px) {
+    .preview img {
+        width: 100px;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>PDF・画像 相互変換ツール</h1>
+
+<div class="section">
+    <h2>① 複数画像 → PDF結合</h2>
+
+    <div class="drop-zone" id="imageDropZone">
+        画像をドラッグ＆ドロップ<br>
+        またはクリックして選択
+    </div>
+
+    <input type="file" id="imageInput" accept="image/*" multiple hidden>
+
+    <input type="text" id="pdfName" placeholder="保存するPDF名（例: report）">
+
+    <div class="preview" id="imagePreview"></div>
+
+    <div class="info">
+        JPG / PNG / WEBP 対応
+    </div>
+
+    <button onclick="createPDF()">PDFを作成</button>
+</div>
+
+<div class="section">
+    <h2>⑤ PDF → 画像変換</h2>
+
+    <div class="drop-zone" id="pdfDropZone">
+        PDFをドラッグ＆ドロップ<br>
+        またはクリックして選択
+    </div>
+
+    <input type="file" id="pdfInput" accept="application/pdf" hidden>
+
+    <div class="preview" id="pdfPreview"></div>
+
+    <div class="info">
+        各ページをPNG画像として保存可能
+    </div>
+</div>
+
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const imageInput = document.getElementById('imageInput');
+const imageDropZone = document.getElementById('imageDropZone');
+const imagePreview = document.getElementById('imagePreview');
+
+const pdfInput = document.getElementById('pdfInput');
+const pdfDropZone = document.getElementById('pdfDropZone');
+const pdfPreview = document.getElementById('pdfPreview');
+
+let imageFiles = [];
+
+// =========================
+// 画像 → PDF
+// =========================
+
+imageDropZone.addEventListener('click', () => imageInput.click());
+
+imageDropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    imageDropZone.classList.add('dragover');
+});
+
+imageDropZone.addEventListener('dragleave', () => {
+    imageDropZone.classList.remove('dragover');
+});
+
+imageDropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    imageDropZone.classList.remove('dragover');
+
+    imageFiles = [...e.dataTransfer.files];
+    showImagePreview();
+});
+
+imageInput.addEventListener('change', () => {
+    imageFiles = [...imageInput.files];
+    showImagePreview();
+});
+
+function showImagePreview() {
+    imagePreview.innerHTML = '';
+
+    imageFiles.forEach(file => {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        imagePreview.appendChild(img);
+    });
+}
+
+async function createPDF() {
+    if (imageFiles.length === 0) {
+        alert('画像を選択してください');
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF();
+
+    for (let i = 0; i < imageFiles.length; i++) {
+        const file = imageFiles[i];
+
+        const imgData = await fileToDataURL(file);
+
+        const img = new Image();
+        img.src = imgData;
+
+        await new Promise(resolve => {
+            img.onload = resolve;
+        });
+
+        const width = pdf.internal.pageSize.getWidth();
+        const height = (img.height * width) / img.width;
+
+        if (i !== 0) {
+            pdf.addPage();
+        }
+
+        pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
+    }
+
+    let name = document.getElementById('pdfName').value.trim();
+
+    if (!name) {
+        name = 'document';
+    }
+
+    pdf.save(name + '.pdf');
+}
+
+function fileToDataURL(file) {
+    return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.readAsDataURL(file);
+    });
+}
+
+// =========================
+// PDF → 画像
+// =========================
+
+pdfDropZone.addEventListener('click', () => pdfInput.click());
+
+pdfDropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    pdfDropZone.classList.add('dragover');
+});
+
+pdfDropZone.addEventListener('dragleave', () => {
+    pdfDropZone.classList.remove('dragover');
+});
+
+pdfDropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    pdfDropZone.classList.remove('dragover');
+
+    handlePDF(e.dataTransfer.files[0]);
+});
+
+pdfInput.addEventListener('change', () => {
+    handlePDF(pdfInput.files[0]);
+});
+
+async function handlePDF(file) {
+    if (!file) return;
+
+    pdfPreview.innerHTML = '';
+
+    const arrayBuffer = await file.arrayBuffer();
+
+    const pdf = await pdfjsLib.getDocument({
+        data: arrayBuffer
+    }).promise;
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+
+        const page = await pdf.getPage(pageNum);
+
+        const viewport = page.getViewport({ scale: 2 });
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({
+            canvasContext: ctx,
+            viewport: viewport
+        }).promise;
+
+        const img = document.createElement('img');
+        img.src = canvas.toDataURL('image/png');
+
+        const link = document.createElement('a');
+        link.href = img.src;
+        link.download = `page-${pageNum}.png`;
+
+        link.appendChild(img);
+
+        pdfPreview.appendChild(link);
+    }
+}
+</script>
+
+</body>
+</html>
