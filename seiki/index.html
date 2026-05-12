@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>正規表現テスター - ToolDock</title>
+
+    <meta name="description" content="正規表現をリアルタイムでテストできる無料ツール。マッチ箇所のハイライト、フラグ指定、エラーチェックに対応したブラウザ完結型Regexテスターです。" />
+
+    <meta name="keywords" content="正規表現, regex, regex tester, 正規表現テスター, JavaScript, ToolDock" />
+    <meta name="author" content="ToolDock" />
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px 15px;
+            font-family: sans-serif;
+            background: #f5f7fb;
+            color: #222;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .description {
+            margin-bottom: 30px;
+            color: #555;
+            line-height: 1.7;
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        textarea,
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+
+        textarea {
+            min-height: 180px;
+            resize: vertical;
+        }
+
+        .flags {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .flags label {
+            font-weight: normal;
+        }
+
+        .result {
+            white-space: pre-wrap;
+            line-height: 1.8;
+            font-size: 1rem;
+            word-break: break-word;
+        }
+
+        mark {
+            background: #ffe066;
+            padding: 2px 0;
+            border-radius: 3px;
+        }
+
+        .success {
+            color: #1b7f3b;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #c62828;
+            font-weight: bold;
+        }
+
+        .match-count {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .tips {
+            line-height: 1.8;
+        }
+
+        code {
+            background: #eef1f6;
+            padding: 2px 6px;
+            border-radius: 5px;
+        }
+
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #777;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.6rem;
+            }
+
+            .card {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>正規表現テスター</h1>
+
+    <p class="description">
+        JavaScriptの正規表現（Regex）をリアルタイムでテストできる無料ツールです。
+        マッチ箇所を自動でハイライト表示し、g・i・mフラグにも対応しています。
+    </p>
+
+    <div class="card">
+        <label for="regex">正規表現</label>
+        <input type="text" id="regex" placeholder="例: \d+" />
+
+        <div class="flags">
+            <label><input type="checkbox" id="flag-g" checked /> g（全体検索）</label>
+            <label><input type="checkbox" id="flag-i" /> i（大文字小文字無視）</label>
+            <label><input type="checkbox" id="flag-m" /> m（複数行）</label>
+        </div>
+    </div>
+
+    <div class="card">
+        <label for="text">テスト文字列</label>
+        <textarea id="text" placeholder="ここにテストしたい文字列を入力してください"></textarea>
+    </div>
+
+    <div class="card">
+        <label>結果</label>
+
+        <div id="status"></div>
+
+        <div class="match-count" id="matchCount"></div>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <div class="card">
+        <h2>よく使う正規表現</h2>
+
+        <div class="tips">
+            <p><code>\d+</code> ：数字</p>
+            <p><code>[a-zA-Z]+</code> ：英字</p>
+            <p><code>\s</code> ：空白文字</p>
+            <p><code>^abc</code> ：abcで始まる</p>
+            <p><code>xyz$</code> ：xyzで終わる</p>
+            <p><code>.+</code> ：任意の1文字以上</p>
+        </div>
+    </div>
+
+    <footer>
+        © ToolDock
+    </footer>
+
+</div>
+
+<script>
+    const regexInput = document.getElementById("regex");
+    const textInput = document.getElementById("text");
+
+    const flagG = document.getElementById("flag-g");
+    const flagI = document.getElementById("flag-i");
+    const flagM = document.getElementById("flag-m");
+
+    const resultDiv = document.getElementById("result");
+    const statusDiv = document.getElementById("status");
+    const matchCountDiv = document.getElementById("matchCount");
+
+    function escapeHtml(str) {
+        return str
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+    }
+
+    function updateRegex() {
+
+        const pattern = regexInput.value;
+        const text = textInput.value;
+
+        let flags = "";
+
+        if (flagG.checked) flags += "g";
+        if (flagI.checked) flags += "i";
+        if (flagM.checked) flags += "m";
+
+        if (pattern === "") {
+            statusDiv.innerHTML = "";
+            resultDiv.innerHTML = escapeHtml(text);
+            matchCountDiv.textContent = "";
+            return;
+        }
+
+        try {
+
+            const regex = new RegExp(pattern, flags);
+
+            statusDiv.innerHTML =
+                '<p class="success">✓ 正規表現は有効です</p>';
+
+            let count = 0;
+
+            const highlighted = escapeHtml(text).replace(regex, match => {
+                count++;
+                return `<mark>${escapeHtml(match)}</mark>`;
+            });
+
+            resultDiv.innerHTML = highlighted;
+
+            matchCountDiv.textContent =
+                `マッチ数: ${count}`;
+
+        } catch (e) {
+
+            statusDiv.innerHTML =
+                `<p class="error">✗ エラー: ${e.message}</p>`;
+
+            resultDiv.textContent = text;
+
+            matchCountDiv.textContent = "";
+        }
+    }
+
+    regexInput.addEventListener("input", updateRegex);
+    textInput.addEventListener("input", updateRegex);
+
+    flagG.addEventListener("change", updateRegex);
+    flagI.addEventListener("change", updateRegex);
+    flagM.addEventListener("change", updateRegex);
+
+    updateRegex();
+</script>
+
+</body>
+</html>
