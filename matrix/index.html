@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>行列計算ツール - ToolDock</title>
+
+    <meta name="description" content="任意サイズの行列に対応した無料の行列計算ツール。行列式・逆行列・転置行列・行列生成をブラウザだけで高速計算できます。" />
+
+    <meta name="keywords" content="行列計算, 行列式, 逆行列, 転置行列, matrix calculator, 数学ツール, ToolDock" />
+
+    <meta name="author" content="ToolDock" />
+
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px 15px;
+            font-family: sans-serif;
+            background: #f5f7fb;
+            color: #222;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            line-height: 1.7;
+            color: #555;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 22px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input[type="number"] {
+            width: 80px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .generate-btn {
+            background: #2563eb;
+            color: white;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 25px;
+        }
+
+        button {
+            border: none;
+            border-radius: 10px;
+            padding: 12px 18px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.2s;
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        .det-btn {
+            background: #0f766e;
+        }
+
+        .inverse-btn {
+            background: #7c3aed;
+        }
+
+        .transpose-btn {
+            background: #ea580c;
+        }
+
+        .clear-btn {
+            background: #c62828;
+        }
+
+        .matrix {
+            display: grid;
+            gap: 8px;
+            margin-top: 25px;
+            overflow-x: auto;
+            width: fit-content;
+            max-width: 100%;
+        }
+
+        .matrix input {
+            width: 75px;
+            height: 50px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        .result {
+            margin-top: 30px;
+            overflow-x: auto;
+            line-height: 1.8;
+        }
+
+        .error {
+            color: #c62828;
+            font-weight: bold;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #777;
+        }
+
+        @media (max-width: 600px) {
+
+            h1 {
+                font-size: 1.6rem;
+            }
+
+            .matrix input {
+                width: 60px;
+                height: 45px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>行列計算ツール</h1>
+
+    <p class="description">
+        任意サイズの行列に対応した無料の行列計算ツールです。
+        行列式・逆行列・転置行列をブラウザ上で計算できます。
+    </p>
+
+    <div class="card">
+
+        <div class="controls">
+
+            <label>
+                行数
+                <input type="number" id="rows" min="1" max="10" value="3">
+            </label>
+
+            <label>
+                列数
+                <input type="number" id="cols" min="1" max="10" value="3">
+            </label>
+
+            <button class="generate-btn" onclick="generateMatrix()">
+                行列生成
+            </button>
+
+        </div>
+
+        <div id="matrixContainer"></div>
+
+        <div class="buttons">
+
+            <button class="det-btn" onclick="calculateDeterminant()">
+                行列式
+            </button>
+
+            <button class="inverse-btn" onclick="calculateInverse()">
+                逆行列
+            </button>
+
+            <button class="transpose-btn" onclick="calculateTranspose()">
+                転置行列
+            </button>
+
+            <button class="clear-btn" onclick="clearMatrix()">
+                クリア
+            </button>
+
+        </div>
+
+        <div class="result" id="result"></div>
+
+    </div>
+
+    <footer>
+        © ToolDock
+    </footer>
+
+</div>
+
+<script>
+
+    const matrixContainer =
+        document.getElementById("matrixContainer");
+
+    const resultDiv =
+        document.getElementById("result");
+
+    function generateMatrix() {
+
+        const rows =
+            parseInt(document.getElementById("rows").value);
+
+        const cols =
+            parseInt(document.getElementById("cols").value);
+
+        matrixContainer.innerHTML = "";
+
+        const matrix =
+            document.createElement("div");
+
+        matrix.className = "matrix";
+
+        matrix.style.gridTemplateColumns =
+            `repeat(${cols}, 75px)`;
+
+        for (let i = 0; i < rows * cols; i++) {
+
+            const input =
+                document.createElement("input");
+
+            input.type = "number";
+            input.step = "any";
+            input.value = "0";
+
+            matrix.appendChild(input);
+        }
+
+        matrixContainer.appendChild(matrix);
+
+        resultDiv.innerHTML = "";
+    }
+
+    function getMatrix() {
+
+        const rows =
+            parseInt(document.getElementById("rows").value);
+
+        const cols =
+            parseInt(document.getElementById("cols").value);
+
+        const inputs =
+            matrixContainer.querySelectorAll("input");
+
+        let matrix = [];
+
+        for (let i = 0; i < rows; i++) {
+
+            let row = [];
+
+            for (let j = 0; j < cols; j++) {
+
+                row.push(
+                    parseFloat(
+                        inputs[i * cols + j].value
+                    )
+                );
+            }
+
+            matrix.push(row);
+        }
+
+        return matrix;
+    }
+
+    function determinant(matrix) {
+
+        const n = matrix.length;
+
+        if (n === 1) {
+            return matrix[0][0];
+        }
+
+        if (n === 2) {
+
+            return matrix[0][0] * matrix[1][1]
+                 - matrix[0][1] * matrix[1][0];
+        }
+
+        let det = 0;
+
+        for (let col = 0; col < n; col++) {
+
+            let subMatrix = [];
+
+            for (let i = 1; i < n; i++) {
+
+                let row = [];
+
+                for (let j = 0; j < n; j++) {
+
+                    if (j !== col) {
+                        row.push(matrix[i][j]);
+                    }
+                }
+
+                subMatrix.push(row);
+            }
+
+            det +=
+                ((col % 2 === 0) ? 1 : -1)
+                * matrix[0][col]
+                * determinant(subMatrix);
+        }
+
+        return det;
+    }
+
+    function calculateDeterminant() {
+
+        const matrix = getMatrix();
+
+        const rows = matrix.length;
+        const cols = matrix[0].length;
+
+        if (rows !== cols) {
+
+            resultDiv.innerHTML =
+                `<p class="error">
+                    行列式は正方行列のみ計算できます
+                </p>`;
+
+            return;
+        }
+
+        const det =
+            determinant(matrix);
+
+        resultDiv.innerHTML =
+            `<h2>行列式</h2>
+            <p>
+            \\[
+            \\det(A) = ${det}
+            \\]
+            </p>`;
+
+        MathJax.typesetPromise();
+    }
+
+    function calculateTranspose() {
+
+        const matrix = getMatrix();
+
+        const rows = matrix.length;
+        const cols = matrix[0].length;
+
+        let result = [];
+
+        for (let i = 0; i < cols; i++) {
+
+            result[i] = [];
+
+            for (let j = 0; j < rows; j++) {
+
+                result[i][j] = matrix[j][i];
+            }
+        }
+
+        showMatrix("転置行列", result);
+    }
+
+    function calculateInverse() {
+
+        const matrix = getMatrix();
+
+        const n = matrix.length;
+
+        if (n !== matrix[0].length) {
+
+            resultDiv.innerHTML =
+                `<p class="error">
+                    逆行列は正方行列のみ計算できます
+                </p>`;
+
+            return;
+        }
+
+        let augmented = [];
+
+        for (let i = 0; i < n; i++) {
+
+            augmented[i] = [];
+
+            for (let j = 0; j < n; j++) {
+                augmented[i][j] = matrix[i][j];
+            }
+
+            for (let j = 0; j < n; j++) {
+                augmented[i][j + n] = (i === j) ? 1 : 0;
+            }
+        }
+
+        for (let i = 0; i < n; i++) {
+
+            let pivot = augmented[i][i];
+
+            if (pivot === 0) {
+
+                let swapped = false;
+
+                for (let j = i + 1; j < n; j++) {
+
+                    if (augmented[j][i] !== 0) {
+
+                        [augmented[i], augmented[j]] =
+                        [augmented[j], augmented[i]];
+
+                        pivot = augmented[i][i];
+
+                        swapped = true;
+
+                        break;
+                    }
+                }
+
+                if (!swapped) {
+
+                    resultDiv.innerHTML =
+                        `<p class="error">
+                            逆行列は存在しません
+                        </p>`;
+
+                    return;
+                }
+            }
+
+            for (let j = 0; j < 2 * n; j++) {
+                augmented[i][j] /= pivot;
+            }
+
+            for (let k = 0; k < n; k++) {
+
+                if (k !== i) {
+
+                    let factor =
+                        augmented[k][i];
+
+                    for (let j = 0; j < 2 * n; j++) {
+
+                        augmented[k][j] -=
+                            factor * augmented[i][j];
+                    }
+                }
+            }
+        }
+
+        let inverse = [];
+
+        for (let i = 0; i < n; i++) {
+
+            inverse[i] = [];
+
+            for (let j = 0; j < n; j++) {
+
+                inverse[i][j] =
+                    Number(
+                        augmented[i][j + n]
+                        .toFixed(6)
+                    );
+            }
+        }
+
+        showMatrix("逆行列", inverse);
+    }
+
+    function showMatrix(title, matrix) {
+
+        let latex = "\\begin{bmatrix}";
+
+        for (let i = 0; i < matrix.length; i++) {
+
+            latex += matrix[i].join(" & ");
+
+            if (i !== matrix.length - 1) {
+                latex += "\\\\";
+            }
+        }
+
+        latex += "\\end{bmatrix}";
+
+        resultDiv.innerHTML =
+            `<h2>${title}</h2>
+            <p>
+            \\[
+            ${latex}
+            \\]
+            </p>`;
+
+        MathJax.typesetPromise();
+    }
+
+    function clearMatrix() {
+
+        const inputs =
+            matrixContainer.querySelectorAll("input");
+
+        inputs.forEach(input => {
+            input.value = 0;
+        });
+
+        resultDiv.innerHTML = "";
+    }
+
+    generateMatrix();
+
+</script>
+
+</body>
+</html>
