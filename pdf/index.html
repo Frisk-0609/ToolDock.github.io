@@ -1,115 +1,161 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-CZ668PDGPM"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-CZ668PDGPM');
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-CZ668PDGPM');
 </script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>PDF・画像変換ツール | ToolDock</title>
-<meta name="description" content="画像をまとめてPDF化、PDFを画像へ変換できる無料オンラインツール。ドラッグ＆ドロップ対応、レポート提出向け、インストール不要。">
-<meta name="keywords" content="PDF変換,画像PDF化,PDF画像変換,画像結合,レポート提出,無料ツール,ToolDock">
 
+<meta name="description"
+content="画像をまとめてPDF化、PDFを画像へ変換できる無料オンラインツール。iPhone・iPad対応、HEIC対応、ドラッグ並び替え対応。">
+
+<meta name="keywords"
+content="PDF変換,画像PDF化,PDF画像変換,HEIC対応,画像結合,レポート提出,無料ツール,ToolDock">
+
+<!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- PDF.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
+<!-- Sortable.js -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+<!-- HEIC -->
+<script src="https://cdn.jsdelivr.net/npm/heic2any/dist/heic2any.min.js"></script>
+
 <style>
-body {
-    font-family: sans-serif;
-    background: #f5f7fb;
-    margin: 0;
-    padding: 20px;
-    color: #222;
+
+body{
+    font-family:sans-serif;
+    background:#f5f7fb;
+    margin:0;
+    padding:20px;
+    color:#222;
 }
 
-.container {
-    max-width: 1000px;
-    margin: auto;
+.container{
+    max-width:1000px;
+    margin:auto;
 }
 
-h1 {
-    text-align: center;
-    margin-bottom: 30px;
+h1{
+    text-align:center;
+    margin-bottom:30px;
 }
 
-.section {
-    background: white;
-    border-radius: 14px;
-    padding: 24px;
-    margin-bottom: 30px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+.section{
+    background:white;
+    border-radius:16px;
+    padding:24px;
+    margin-bottom:30px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
 }
 
-.drop-zone {
-    border: 3px dashed #888;
-    border-radius: 12px;
-    padding: 40px;
-    text-align: center;
-    background: #fafafa;
-    transition: 0.2s;
-    cursor: pointer;
+.drop-zone{
+    border:3px dashed #888;
+    border-radius:12px;
+    padding:40px;
+    text-align:center;
+    background:#fafafa;
+    transition:0.2s;
+    cursor:pointer;
 }
 
-.drop-zone.dragover {
-    background: #e8f0ff;
-    border-color: #3366ff;
+.drop-zone.dragover{
+    background:#e8f0ff;
+    border-color:#3366ff;
 }
 
-.preview {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 20px;
+.preview{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    margin-top:20px;
 }
 
-.preview img {
-    width: 140px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
+.preview-item{
+    position:relative;
 }
 
-button {
-    background: #3366ff;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 10px;
-    font-size: 16px;
-    cursor: pointer;
-    margin-top: 15px;
+.preview img{
+    width:140px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    cursor:grab;
+    background:white;
 }
 
-button:hover {
-    background: #2244cc;
+.page-number{
+    position:absolute;
+    top:6px;
+    left:6px;
+    background:rgba(0,0,0,0.7);
+    color:white;
+    padding:4px 8px;
+    border-radius:8px;
+    font-size:12px;
 }
 
-input[type="text"] {
-    width: 100%;
-    padding: 12px;
-    margin-top: 15px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
+button{
+    background:#3366ff;
+    color:white;
+    border:none;
+    padding:12px 20px;
+    border-radius:10px;
+    font-size:16px;
+    cursor:pointer;
+    margin-top:15px;
 }
 
-.info {
-    margin-top: 10px;
-    color: #666;
-    font-size: 14px;
+button:hover{
+    background:#2244cc;
 }
 
-@media(max-width: 700px) {
-    .preview img {
-        width: 100px;
+input[type="text"]{
+    width:100%;
+    padding:12px;
+    margin-top:15px;
+    border-radius:8px;
+    border:1px solid #ccc;
+    box-sizing:border-box;
+}
+
+.info{
+    margin-top:10px;
+    color:#666;
+    font-size:14px;
+    line-height:1.7;
+}
+
+.loading{
+    margin-top:15px;
+    color:#3366ff;
+    font-weight:bold;
+}
+
+@media(max-width:700px){
+
+    .preview img{
+        width:100px;
     }
+
+    .drop-zone{
+        padding:28px;
+    }
+
 }
+
 </style>
 </head>
 <body>
@@ -119,46 +165,64 @@ input[type="text"] {
 <h1>PDF・画像 相互変換ツール</h1>
 
 <div class="section">
-    <h2>① 複数画像 → PDF結合</h2>
 
-    <div class="drop-zone" id="imageDropZone">
-        画像をドラッグ＆ドロップ<br>
-        またはクリックして選択
-    </div>
+<h2>① 複数画像 → PDF結合</h2>
 
-    <input type="file" id="imageInput" accept="image/*" multiple hidden>
+<div class="drop-zone" id="imageDropZone">
+画像をドラッグ＆ドロップ<br>
+またはクリックして選択
+</div>
 
-    <input type="text" id="pdfName" placeholder="保存するPDF名（例: report）">
+<input type="file"
+id="imageInput"
+accept="image/*,.heic,.HEIC"
+multiple
+hidden>
 
-    <div class="preview" id="imagePreview"></div>
+<input type="text"
+id="pdfName"
+placeholder="保存するPDF名（例: report）">
 
-    <div class="info">
-        JPG / PNG / WEBP 対応
-    </div>
+<div class="info">
+JPG / PNG / WEBP / HEIC 対応<br>
+画像をドラッグして順番変更可能
+</div>
 
-    <button onclick="createPDF()">PDFを作成</button>
+<div class="loading" id="loadingText"></div>
+
+<div class="preview" id="imagePreview"></div>
+
+<button onclick="createPDF()">PDFを作成</button>
+
 </div>
 
 <div class="section">
-    <h2>② PDF → 画像変換</h2>
 
-    <div class="drop-zone" id="pdfDropZone">
-        PDFをドラッグ＆ドロップ<br>
-        またはクリックして選択
-    </div>
+<h2>② PDF → 画像変換</h2>
 
-    <input type="file" id="pdfInput" accept="application/pdf" hidden>
+<div class="drop-zone" id="pdfDropZone">
+PDFをドラッグ＆ドロップ<br>
+またはクリックして選択
+</div>
 
-    <div class="preview" id="pdfPreview"></div>
+<input type="file"
+id="pdfInput"
+accept="application/pdf"
+hidden>
 
-    <div class="info">
-        各ページをPNG画像として保存可能
-    </div>
+<div class="info">
+各ページをPNG画像として保存可能<br>
+iPhone・iPad対応
+</div>
+
+<div class="preview" id="pdfPreview"></div>
+
 </div>
 
 </div>
 
 <script>
+
 pdfjsLib.GlobalWorkerOptions.workerSrc =
 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
@@ -170,13 +234,38 @@ const pdfInput = document.getElementById('pdfInput');
 const pdfDropZone = document.getElementById('pdfDropZone');
 const pdfPreview = document.getElementById('pdfPreview');
 
+const loadingText = document.getElementById('loadingText');
+
 let imageFiles = [];
 
 // =========================
-// 画像 → PDF
+// Sortable
 // =========================
 
-imageDropZone.addEventListener('click', () => imageInput.click());
+new Sortable(imagePreview,{
+    animation:150,
+    onEnd: () => {
+
+        const newOrder = [];
+
+        [...imagePreview.children].forEach(item => {
+            const index = item.dataset.index;
+            newOrder.push(imageFiles[index]);
+        });
+
+        imageFiles = newOrder;
+
+        showImagePreview();
+    }
+});
+
+// =========================
+// Image Events
+// =========================
+
+imageDropZone.addEventListener('click', () => {
+    imageInput.click();
+});
 
 imageDropZone.addEventListener('dragover', e => {
     e.preventDefault();
@@ -187,143 +276,353 @@ imageDropZone.addEventListener('dragleave', () => {
     imageDropZone.classList.remove('dragover');
 });
 
-imageDropZone.addEventListener('drop', e => {
+imageDropZone.addEventListener('drop', async e => {
+
     e.preventDefault();
+
     imageDropZone.classList.remove('dragover');
 
-    imageFiles = [...e.dataTransfer.files];
-    showImagePreview();
+    await handleImages(e.dataTransfer.files);
 });
 
-imageInput.addEventListener('change', () => {
-    imageFiles = [...imageInput.files];
-    showImagePreview();
+imageInput.addEventListener('change', async () => {
+    await handleImages(imageInput.files);
 });
 
-function showImagePreview() {
-    imagePreview.innerHTML = '';
+// =========================
+// Handle Images
+// =========================
 
-    imageFiles.forEach(file => {
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
-        imagePreview.appendChild(img);
-    });
-}
+async function handleImages(files){
 
-async function createPDF() {
-    if (imageFiles.length === 0) {
-        alert('画像を選択してください');
-        return;
+    loadingText.textContent = '画像を処理中...';
+
+    imageFiles = [];
+
+    for(const file of files){
+
+        // HEIC対応
+        if(
+            file.type === 'image/heic' ||
+            file.name.toLowerCase().endsWith('.heic')
+        ){
+
+            try{
+
+                const convertedBlob = await heic2any({
+                    blob:file,
+                    toType:'image/jpeg',
+                    quality:0.95
+                });
+
+                const convertedFile = new File(
+                    [convertedBlob],
+                    file.name.replace(/\.heic/i,'.jpg'),
+                    {
+                        type:'image/jpeg'
+                    }
+                );
+
+                imageFiles.push(convertedFile);
+
+            }catch(err){
+
+                alert('HEIC変換に失敗しました');
+
+                console.error(err);
+            }
+
+        }else{
+
+            imageFiles.push(file);
+
+        }
+
     }
 
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF();
+    showImagePreview();
 
-    for (let i = 0; i < imageFiles.length; i++) {
+    loadingText.textContent = '';
+}
+
+// =========================
+// Preview
+// =========================
+
+function showImagePreview(){
+
+    imagePreview.innerHTML = '';
+
+    imageFiles.forEach((file,index)=>{
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'preview-item';
+        wrapper.dataset.index = index;
+
+        const img = document.createElement('img');
+
+        img.src = URL.createObjectURL(file);
+
+        const number = document.createElement('div');
+        number.className = 'page-number';
+        number.textContent = index + 1;
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(number);
+
+        imagePreview.appendChild(wrapper);
+
+    });
+
+}
+
+// =========================
+// Create PDF
+// =========================
+
+async function createPDF(){
+
+    if(imageFiles.length === 0){
+
+        alert('画像を選択してください');
+        return;
+
+    }
+
+    loadingText.textContent = 'PDF生成中...';
+
+    const { jsPDF } = window.jspdf;
+
+    const pdf = new jsPDF({
+        orientation:'portrait',
+        unit:'mm',
+        format:'a4'
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    for(let i=0;i<imageFiles.length;i++){
+
         const file = imageFiles[i];
 
         const imgData = await fileToDataURL(file);
 
         const img = new Image();
+
         img.src = imgData;
 
-        await new Promise(resolve => {
+        await new Promise(resolve=>{
             img.onload = resolve;
         });
 
-        const width = pdf.internal.pageSize.getWidth();
-        const height = (img.height * width) / img.width;
+        const ratio = Math.min(
+            pageWidth / img.width,
+            pageHeight / img.height
+        );
 
-        if (i !== 0) {
+        const imgWidth = img.width * ratio;
+        const imgHeight = img.height * ratio;
+
+        const x = (pageWidth - imgWidth) / 2;
+        const y = (pageHeight - imgHeight) / 2;
+
+        if(i !== 0){
             pdf.addPage();
         }
 
-        pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
+        pdf.addImage(
+            imgData,
+            'JPEG',
+            x,
+            y,
+            imgWidth,
+            imgHeight
+        );
+
     }
 
-    let name = document.getElementById('pdfName').value.trim();
+    let name =
+    document.getElementById('pdfName').value.trim();
 
-    if (!name) {
+    if(!name){
         name = 'document';
     }
 
-    pdf.save(name + '.pdf');
+    // iOS対応
+    const blob = pdf.output('blob');
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+
+    a.href = url;
+    a.download = name + '.pdf';
+
+    document.body.appendChild(a);
+
+    // iOS Safari fallback
+    if(typeof a.download === 'undefined'){
+
+        window.open(url,'_blank');
+
+    }else{
+
+        a.click();
+
+    }
+
+    document.body.removeChild(a);
+
+    loadingText.textContent = '';
+
 }
 
-function fileToDataURL(file) {
-    return new Promise(resolve => {
+// =========================
+// File to DataURL
+// =========================
+
+function fileToDataURL(file){
+
+    return new Promise(resolve=>{
+
         const reader = new FileReader();
+
         reader.onload = e => resolve(e.target.result);
+
         reader.readAsDataURL(file);
+
     });
+
 }
 
 // =========================
-// PDF → 画像
+// PDF Events
 // =========================
 
-pdfDropZone.addEventListener('click', () => pdfInput.click());
+pdfDropZone.addEventListener('click',()=>{
 
-pdfDropZone.addEventListener('dragover', e => {
+    pdfInput.click();
+
+});
+
+pdfDropZone.addEventListener('dragover',e=>{
+
     e.preventDefault();
+
     pdfDropZone.classList.add('dragover');
+
 });
 
-pdfDropZone.addEventListener('dragleave', () => {
+pdfDropZone.addEventListener('dragleave',()=>{
+
     pdfDropZone.classList.remove('dragover');
+
 });
 
-pdfDropZone.addEventListener('drop', e => {
+pdfDropZone.addEventListener('drop',e=>{
+
     e.preventDefault();
+
     pdfDropZone.classList.remove('dragover');
 
     handlePDF(e.dataTransfer.files[0]);
+
 });
 
-pdfInput.addEventListener('change', () => {
+pdfInput.addEventListener('change',()=>{
+
     handlePDF(pdfInput.files[0]);
+
 });
 
-async function handlePDF(file) {
-    if (!file) return;
+// =========================
+// PDF → Images
+// =========================
+
+async function handlePDF(file){
+
+    if(!file) return;
 
     pdfPreview.innerHTML = '';
+
+    loadingText.textContent = 'PDFを変換中...';
 
     const arrayBuffer = await file.arrayBuffer();
 
     const pdf = await pdfjsLib.getDocument({
-        data: arrayBuffer
+        data:arrayBuffer
     }).promise;
 
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    for(let pageNum=1;pageNum<=pdf.numPages;pageNum++){
 
         const page = await pdf.getPage(pageNum);
 
-        const viewport = page.getViewport({ scale: 2 });
+        const viewport = page.getViewport({
+            scale:2
+        });
 
         const canvas = document.createElement('canvas');
+
         const ctx = canvas.getContext('2d');
 
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
         await page.render({
-            canvasContext: ctx,
-            viewport: viewport
+            canvasContext:ctx,
+            viewport:viewport
         }).promise;
 
+        const wrapper = document.createElement('div');
+        wrapper.className = 'preview-item';
+
+        const number = document.createElement('div');
+        number.className = 'page-number';
+        number.textContent = pageNum;
+
         const img = document.createElement('img');
-        img.src = canvas.toDataURL('image/png');
 
-        const link = document.createElement('a');
-        link.href = img.src;
-        link.download = `page-${pageNum}.png`;
+        canvas.toBlob(blob=>{
 
-        link.appendChild(img);
+            const url = URL.createObjectURL(blob);
 
-        pdfPreview.appendChild(link);
+            img.src = url;
+
+            const link = document.createElement('a');
+
+            link.href = url;
+            link.download = `page-${pageNum}.png`;
+
+            // iOS fallback
+            link.addEventListener('click',(e)=>{
+
+                if(typeof link.download === 'undefined'){
+
+                    e.preventDefault();
+
+                    window.open(url,'_blank');
+
+                }
+
+            });
+
+            wrapper.appendChild(number);
+
+            link.appendChild(img);
+
+            wrapper.appendChild(link);
+
+            pdfPreview.appendChild(wrapper);
+
+        },'image/png');
+
     }
+
+    loadingText.textContent = '';
+
 }
+
 </script>
 
 </body>
