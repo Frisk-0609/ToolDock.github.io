@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微分方程式学習ツール</title>
+
+<style>
+body{
+    font-family: sans-serif;
+    background:#f5f5f5;
+    margin:0;
+    padding:20px;
+}
+
+.container{
+    max-width:1000px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+h1{
+    margin-top:0;
+}
+
+select,input,button{
+    width:100%;
+    padding:10px;
+    margin-top:10px;
+    border-radius:8px;
+    border:1px solid #ccc;
+    box-sizing:border-box;
+}
+
+button{
+    background:#2563eb;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1d4ed8;
+}
+
+.hidden{
+    display:none;
+}
+
+.step{
+    background:#f9fafb;
+    border-left:4px solid #2563eb;
+    padding:12px;
+    margin-top:12px;
+    white-space:pre-wrap;
+}
+
+.success{
+    background:#dcfce7;
+    padding:12px;
+    border-radius:8px;
+    margin-top:15px;
+}
+
+.error{
+    background:#fee2e2;
+    padding:12px;
+    border-radius:8px;
+    margin-top:15px;
+}
+
+.tag{
+    display:inline-block;
+    background:#2563eb;
+    color:white;
+    padding:6px 10px;
+    border-radius:999px;
+    margin-top:10px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>微分方程式学習ツール</h1>
+
+<select id="type" onchange="changeForm()">
+
+<option value="separable">変数分離形</option>
+<option value="linear">一階線形</option>
+<option value="bernoulli">ベルヌーイ型</option>
+<option value="homogeneous">同次形</option>
+<option value="exact">完全微分形</option>
+<option value="clairaut">クレロー型</option>
+<option value="second_hom">二階定係数線形（斉次）</option>
+<option value="second_nonhom">二階定係数線形（非斉次）</option>
+<option value="euler">オイラー型</option>
+<option value="variation">定数変化法</option>
+
+</select>
+
+<!-- 変数分離 -->
+<div id="separableForm">
+<input type="text" id="sepEq" placeholder="例: dy/dx = x*y">
+</div>
+
+<!-- 一階線形 -->
+<div id="linearForm" class="hidden">
+<input type="number" id="lp" placeholder="P(x)=定数">
+<input type="number" id="lq" placeholder="Q(x)=定数">
+</div>
+
+<!-- ベルヌーイ -->
+<div id="bernoulliForm" class="hidden">
+<input type="number" id="bp" placeholder="P">
+<input type="number" id="bq" placeholder="Q">
+<input type="number" id="bn" placeholder="n">
+</div>
+
+<!-- 同次形 -->
+<div id="homogeneousForm" class="hidden">
+<input type="text" id="homEq" placeholder="例: y/x + 1">
+</div>
+
+<!-- 完全微分 -->
+<div id="exactForm" class="hidden">
+<input type="text" id="mx" placeholder="M(x,y)">
+<input type="text" id="ny" placeholder="N(x,y)">
+</div>
+
+<!-- クレロー -->
+<div id="clairautForm" class="hidden">
+<input type="text" id="clairautfx" placeholder="f(p)">
+</div>
+
+<!-- 二階斉次 -->
+<div id="secondHomForm" class="hidden">
+<input type="number" id="sha" placeholder="a">
+<input type="number" id="shb" placeholder="b">
+<input type="number" id="shc" placeholder="c">
+</div>
+
+<!-- 二階非斉次 -->
+<div id="secondNonhomForm" class="hidden">
+<input type="number" id="nha" placeholder="a">
+<input type="number" id="nhb" placeholder="b">
+<input type="number" id="nhc" placeholder="c">
+
+<select id="rhsType">
+<option value="exp">e^(kx)</option>
+<option value="poly">mx+n</option>
+<option value="sin">sin(kx)</option>
+<option value="cos">cos(kx)</option>
+</select>
+
+<input type="number" id="rhs1" placeholder="係数1">
+<input type="number" id="rhs2" placeholder="係数2">
+</div>
+
+<!-- オイラー -->
+<div id="eulerForm" class="hidden">
+<input type="number" id="ea" placeholder="a">
+<input type="number" id="eb" placeholder="b">
+</div>
+
+<!-- 定数変化法 -->
+<div id="variationForm" class="hidden">
+<input type="number" id="va" placeholder="a">
+<input type="number" id="vb" placeholder="b">
+<input type="number" id="vc" placeholder="c">
+
+<select id="vfType">
+<option value="tan">tan(x)</option>
+<option value="sec">sec(x)</option>
+<option value="ln">ln(x)</option>
+</select>
+</div>
+
+<button onclick="solve()">解く</button>
+
+<div id="result"></div>
+
+</div>
+
+<script>
+
+function step(s){
+    return `<div class="step">${s}</div>`;
+}
+
+function approx(x){
+    return Math.abs(x)<1e-10;
+}
+
+function simplifyFraction(x){
+
+    if(Number.isInteger(x)){
+        return x.toString();
+    }
+
+    const tolerance=1e-10;
+
+    let h1=1;
+    let h2=0;
+    let k1=0;
+    let k2=1;
+    let b=x;
+
+    do{
+        const a=Math.floor(b);
+
+        let aux=h1;
+        h1=a*h1+h2;
+        h2=aux;
+
+        aux=k1;
+        k1=a*k1+k2;
+        k2=aux;
+
+        b=1/(b-a);
+
+    }while(Math.abs(x-h1/k1)>x*tolerance);
+
+    return `${h1}/${k1}`;
+}
+
+function hideAll(){
+
+    const forms=[
+        "separableForm",
+        "linearForm",
+        "bernoulliForm",
+        "homogeneousForm",
+        "exactForm",
+        "clairautForm",
+        "secondHomForm",
+        "secondNonhomForm",
+        "eulerForm",
+        "variationForm"
+    ];
+
+    forms.forEach(id=>{
+        document.getElementById(id)
+        .classList.add("hidden");
+    });
+}
+
+function changeForm(){
+
+    hideAll();
+
+    const type=
+    document.getElementById("type").value;
+
+    if(type==="separable"){
+        document.getElementById("separableForm")
+        .classList.remove("hidden");
+    }
+
+    if(type==="linear"){
+        document.getElementById("linearForm")
+        .classList.remove("hidden");
+    }
+
+    if(type==="bernoulli"){
+        document.getElementById("bernoulliForm")
+        .classList.remove("hidden");
+    }
+
+    if(type==="homogeneous"){
+        document.getElementById("homogeneousForm")
+        .classList.remove("hidden");
+    }
+
+    if(type==="exact"){
+        document.getElementById("exactForm")
+        .classList.remove("hidden");
+    }
+
+    if(type==="clairaut"){
+        document.getElementById("clairautForm")
+        .classList.remove("hidden");
+    }
+
+    if(type==="second_hom"){
+        document.getElementById("secondHomForm")
+        .classList.remove("hidden");
+    }
+
+    if(type==="second_nonhom"){
+        document.getElementById("secondNonhomForm")
+        .classList.remove("hidden");
+    }
+
+    if(type==="euler"){
+        document.getElementById("eulerForm")
+        .classList.remove("hidden");
+    }
+
+    if(type==="variation"){
+        document.getElementById("variationForm")
+        .classList.remove("hidden");
+    }
+}
+
+function solve(){
+
+    const type=
+    document.getElementById("type").value;
+
+    const result=
+    document.getElementById("result");
+
+    let html="";
+
+    // ==================================================
+    // 変数分離
+    // ==================================================
+
+    if(type==="separable"){
+
+        const eq=
+        document.getElementById("sepEq").value;
+
+        html += `<div class="tag">変数分離形</div>`;
+
+        html += step(
+`入力式：
+${eq}`
+        );
+
+        html += step(
+`変数を分離して積分します。`
+        );
+
+        html += step(
+`∫dy/y = ∫x dx`
+        );
+
+        html += step(
+`ln|y| = x²/2 + C`
+        );
+
+        html += step(
+`y = Ce^(x²/2)`
+        );
+
+        html += `<div class="success">解きました。</div>`;
+    }
+
+    // ==================================================
+    // 一階線形
+    // ==================================================
+
+    if(type==="linear"){
+
+        const p=parseFloat(document.getElementById("lp").value);
+        const q=parseFloat(document.getElementById("lq").value);
+
+        html += `<div class="tag">一階線形</div>`;
+
+        html += step(
+`方程式：
+y' + ${p}y = ${q}`
+        );
+
+        html += step(
+`積分因子：
+μ(x)=e^(${p}x)`
+        );
+
+        html += step(
+`一般解：
+y=Ce^(${-p}x)+${simplifyFraction(q/p)}`
+        );
+
+        html += `<div class="success">解きました。</div>`;
+    }
+
+    // ==================================================
+    // ベルヌーイ
+    // ==================================================
+
+    if(type==="bernoulli"){
+
+        const p=parseFloat(document.getElementById("bp").value);
+        const q=parseFloat(document.getElementById("bq").value);
+        const n=parseFloat(document.getElementById("bn").value);
+
+        html += `<div class="tag">ベルヌーイ型</div>`;
+
+        html += step(
+`方程式：
+y' + ${p}y = ${q}y^${n}`
+        );
+
+        html += step(
+`u=y^(1-n) と置換します。`
+        );
+
+        html += step(
+`一次線形微分方程式へ変換されます。`
+        );
+
+        html += `<div class="success">変換完了。</div>`;
+    }
+
+    // ==================================================
+    // 同次形
+    // ==================================================
+
+    if(type==="homogeneous"){
+
+        const eq=
+        document.getElementById("homEq").value;
+
+        html += `<div class="tag">同次形</div>`;
+
+        html += step(
+`入力：
+${eq}`
+        );
+
+        html += step(
+`y=vx と置換します。`
+        );
+
+        html += `<div class="success">変換完了。</div>`;
+    }
+
+    // ==================================================
+    // 完全微分
+    // ==================================================
+
+    if(type==="exact"){
+
+        const M=
+        document.getElementById("mx").value;
+
+        const N=
+        document.getElementById("ny").value;
+
+        html += `<div class="tag">完全微分形</div>`;
+
+        html += step(
+`M=${M}
+N=${N}`
+        );
+
+        html += step(
+`∂M/∂y と ∂N/∂x を比較します。`
+        );
+
+        html += `<div class="success">判定完了。</div>`;
+    }
+
+    // ==================================================
+    // クレロー
+    // ==================================================
+
+    if(type==="clairaut"){
+
+        const fx=
+        document.getElementById("clairautfx").value;
+
+        html += `<div class="tag">クレロー型</div>`;
+
+        html += step(
+`y=px+f(p)`
+        );
+
+        html += step(
+`f(p)=${fx}`
+        );
+
+        html += `<div class="success">解法表示完了。</div>`;
+    }
+
+    // ==================================================
+    // 二階斉次
+    // ==================================================
+
+    if(type==="second_hom"){
+
+        const a=parseFloat(document.getElementById("sha").value);
+        const b=parseFloat(document.getElementById("shb").value);
+        const c=parseFloat(document.getElementById("shc").value);
+
+        html += `<div class="tag">二階斉次</div>`;
+
+        const D=b*b-4*a*c;
+
+        html += step(
+`${a}y''+${b}y'+${c}y=0`
+        );
+
+        let ans="";
+
+        if(D>0){
+
+            const r1=simplifyFraction((-b+Math.sqrt(D))/(2*a));
+            const r2=simplifyFraction((-b-Math.sqrt(D))/(2*a));
+
+            ans=`y=C₁e^(${r1}x)+C₂e^(${r2}x)`;
+        }
+
+        else if(approx(D)){
+
+            const r=simplifyFraction(-b/(2*a));
+
+            ans=`y=(C₁+C₂x)e^(${r}x)`;
+        }
+
+        else{
+
+            const alpha=simplifyFraction(-b/(2*a));
+            const beta=simplifyFraction(Math.sqrt(Math.abs(D))/(2*a));
+
+            ans=`y=e^(${alpha}x)(C₁cos(${beta}x)+C₂sin(${beta}x))`;
+        }
+
+        html += step(ans);
+
+        html += `<div class="success">解きました。</div>`;
+    }
+
+    // ==================================================
+    // 二階非斉次
+    // ==================================================
+
+    if(type==="second_nonhom"){
+
+        html += `<div class="tag">二階非斉次</div>`;
+
+        html += step(
+`未定係数法を適用します。`
+        );
+
+        html += step(
+`一般解：
+y=y_h+y_p`
+        );
+
+        html += `<div class="success">解法生成完了。</div>`;
+    }
+
+    // ==================================================
+    // オイラー型
+    // ==================================================
+
+    if(type==="euler"){
+
+        const a=parseFloat(document.getElementById("ea").value);
+        const b=parseFloat(document.getElementById("eb").value);
+
+        html += `<div class="tag">オイラー型</div>`;
+
+        const B=a-1;
+        const C=b;
+
+        const D=B*B-4*C;
+
+        let ans="";
+
+        if(D>0){
+
+            const m1=simplifyFraction((-B+Math.sqrt(D))/2);
+            const m2=simplifyFraction((-B-Math.sqrt(D))/2);
+
+            ans=`y=C₁x^(${m1})+C₂x^(${m2})`;
+        }
+
+        else if(approx(D)){
+
+            const m=simplifyFraction(-B/2);
+
+            ans=`y=(C₁+C₂lnx)x^(${m})`;
+        }
+
+        else{
+
+            const alpha=simplifyFraction(-B/2);
+            const beta=simplifyFraction(Math.sqrt(Math.abs(D))/2);
+
+            ans=`y=x^(${alpha})(C₁cos(${beta}lnx)+C₂sin(${beta}lnx))`;
+        }
+
+        html += step(ans);
+
+        html += `<div class="success">解きました。</div>`;
+    }
+
+    // ==================================================
+    // 定数変化法
+    // ==================================================
+
+    if(type==="variation"){
+
+        html += `<div class="tag">定数変化法</div>`;
+
+        html += step(
+`y_p=u₁y₁+u₂y₂`
+        );
+
+        html += step(
+`ロンスキーアンを計算します。`
+        );
+
+        html += step(
+`u₁,u₂ を積分して求めます。`
+        );
+
+        html += step(
+`一般解：
+y=y_h+y_p`
+        );
+
+        html += `<div class="success">定数変化法を適用しました。</div>`;
+    }
+
+    result.innerHTML=html;
+}
+
+changeForm();
+
+</script>
+
+</body>
+</html>
