@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>掃き出し法計算ツール｜途中式付き・行列ランク判定</title>
+
+<meta name="description" content="掃き出し法（ガウスの消去法）の途中式を表示しながら、行列のランクを判定できる無料ツールです。大学数学・線形代数の学習向け。" />
+
+<style>
+    body {
+        font-family: "Yu Gothic", sans-serif;
+        background: #f4f6f9;
+        margin: 0;
+        padding: 20px;
+        color: #222;
+    }
+
+    .container {
+        max-width: 1000px;
+        margin: auto;
+        background: white;
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+        margin-top: 0;
+        font-size: 2rem;
+    }
+
+    p.description {
+        color: #555;
+        line-height: 1.8;
+    }
+
+    .controls {
+        margin: 20px 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+
+    input[type="number"] {
+        width: 70px;
+        padding: 8px;
+        font-size: 1rem;
+    }
+
+    button {
+        padding: 10px 18px;
+        border: none;
+        border-radius: 10px;
+        background: #2563eb;
+        color: white;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #1d4ed8;
+    }
+
+    .matrix-grid {
+        display: grid;
+        gap: 6px;
+        margin: 20px 0;
+    }
+
+    .matrix-grid input {
+        width: 70px;
+        padding: 8px;
+        text-align: center;
+        font-size: 1rem;
+    }
+
+    .step {
+        background: #f8fafc;
+        border-left: 5px solid #2563eb;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 10px;
+    }
+
+    .step-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    table.matrix {
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    table.matrix td {
+        border: 1px solid #bbb;
+        padding: 10px 14px;
+        text-align: center;
+        min-width: 40px;
+        background: white;
+    }
+
+    .rank-result {
+        margin-top: 30px;
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: #0f172a;
+    }
+
+    footer {
+        margin-top: 40px;
+        color: #666;
+        font-size: 0.9rem;
+        line-height: 1.7;
+    }
+
+    @media (max-width: 600px) {
+        table.matrix td {
+            padding: 6px 8px;
+            min-width: 28px;
+        }
+
+        .matrix-grid input {
+            width: 55px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>掃き出し法計算ツール（途中式付き）</h1>
+
+    <p class="description">
+        線形代数で用いられる掃き出し法（ガウスの消去法）を、途中式付きで表示する無料ツールです。
+        行基本変形の流れを確認しながら、行列のランク（rank）を判定できます。
+    </p>
+
+    <div class="controls">
+        <label>
+            行数
+            <input type="number" id="rows" min="1" max="8" value="3">
+        </label>
+
+        <label>
+            列数
+            <input type="number" id="cols" min="1" max="8" value="3">
+        </label>
+
+        <button onclick="generateMatrix()">行列を作成</button>
+        <button onclick="calculate()">掃き出し開始</button>
+    </div>
+
+    <div id="matrixInput"></div>
+
+    <div id="output"></div>
+
+</div>
+
+<script>
+function generateMatrix() {
+    const rows = parseInt(document.getElementById("rows").value);
+    const cols = parseInt(document.getElementById("cols").value);
+
+    const container = document.getElementById("matrixInput");
+
+    let html = `<div class="matrix-grid" style="grid-template-columns: repeat(${cols}, auto)">`;
+
+    for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+            html += `<input type="number" step="any" id="cell-${i}-${j}" value="0">`;
+        }
+    }
+
+    html += `</div>`;
+
+    container.innerHTML = html;
+}
+
+generateMatrix();
+
+function getMatrix() {
+    const rows = parseInt(document.getElementById("rows").value);
+    const cols = parseInt(document.getElementById("cols").value);
+
+    const matrix = [];
+
+    for (let i = 0; i < rows; i++) {
+        const row = [];
+
+        for (let j = 0; j < cols; j++) {
+            row.push(parseFloat(document.getElementById(`cell-${i}-${j}`).value));
+        }
+
+        matrix.push(row);
+    }
+
+    return matrix;
+}
+
+function matrixToHTML(matrix) {
+    let html = `<table class="matrix">`;
+
+    for (const row of matrix) {
+        html += "<tr>";
+
+        for (const val of row) {
+            let display = Math.abs(val) < 1e-10 ? 0 : val;
+
+            display = Number.isInteger(display)
+                ? display
+                : display.toFixed(3);
+
+            html += `<td>${display}</td>`;
+        }
+
+        html += "</tr>";
+    }
+
+    html += "</table>";
+
+    return html;
+}
+
+function calculate() {
+    let A = getMatrix();
+
+    const rows = A.length;
+    const cols = A[0].length;
+
+    const output = document.getElementById("output");
+
+    output.innerHTML = "";
+
+    let rank = 0;
+    let currentRow = 0;
+
+    for (let col = 0; col < cols && currentRow < rows; col++) {
+
+        let pivotRow = currentRow;
+
+        for (let r = currentRow; r < rows; r++) {
+            if (Math.abs(A[r][col]) > Math.abs(A[pivotRow][col])) {
+                pivotRow = r;
+            }
+        }
+
+        if (Math.abs(A[pivotRow][col]) < 1e-10) {
+            continue;
+        }
+
+        if (pivotRow !== currentRow) {
+            [A[pivotRow], A[currentRow]] = [A[currentRow], A[pivotRow]];
+
+            output.innerHTML += `
+                <div class="step">
+                    <div class="step-title">
+                        R${pivotRow + 1} ↔ R${currentRow + 1}
+                    </div>
+                    ${matrixToHTML(A)}
+                </div>
+            `;
+        }
+
+        const pivot = A[currentRow][col];
+
+        for (let j = 0; j < cols; j++) {
+            A[currentRow][j] /= pivot;
+        }
+
+        output.innerHTML += `
+            <div class="step">
+                <div class="step-title">
+                    R${currentRow + 1} ÷ ${pivot.toFixed(3)}
+                </div>
+                ${matrixToHTML(A)}
+            </div>
+        `;
+
+        for (let r = 0; r < rows; r++) {
+
+            if (r === currentRow) continue;
+
+            const factor = A[r][col];
+
+            if (Math.abs(factor) < 1e-10) continue;
+
+            for (let j = 0; j < cols; j++) {
+                A[r][j] -= factor * A[currentRow][j];
+            }
+
+            output.innerHTML += `
+                <div class="step">
+                    <div class="step-title">
+                        R${r + 1} ← R${r + 1} - (${factor.toFixed(3)})R${currentRow + 1}
+                    </div>
+                    ${matrixToHTML(A)}
+                </div>
+            `;
+        }
+
+        rank++;
+        currentRow++;
+    }
+
+    output.innerHTML += `
+        <div class="rank-result">
+            行列のランク：${rank}
+        </div>
+    `;
+}
+</script>
+
+<footer class="container">
+    <strong>掃き出し法とは？</strong><br>
+    掃き出し法（ガウス・ジョルダン法）は、行列に対して行基本変形を行い、連立一次方程式の解やランクを求めるためのアルゴリズムです。
+    大学の線形代数では非常に重要な計算手法として扱われます。
+</footer>
+
+</body>
+</html>
