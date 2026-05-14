@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<head>
+
+  <style>
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #f3f5fb;
+      color: #222;
+      font-family: sans-serif;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .desc {
+      text-align: center;
+      color: #555;
+      line-height: 1.7;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 18px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow:
+        0 4px 14px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    .label {
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    textarea,
+    select {
+
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      margin-bottom: 18px;
+
+    }
+
+    textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+
+    button {
+
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: #2563eb;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-bottom: 14px;
+
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .copy-btn {
+      background: #16a34a;
+    }
+
+    .copy-btn:hover {
+      background: #15803d;
+    }
+
+    .mode-info {
+
+      background: #eef4ff;
+      border-radius: 12px;
+      padding: 14px;
+      line-height: 1.8;
+      color: #444;
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+
+    }
+
+    footer {
+      text-align: center;
+      color: #666;
+      margin-top: 40px;
+      font-size: 0.9rem;
+    }
+
+  </style>
+  
+<body>
+
+  <div class="container">
+
+    <h1>
+      文字化け生成＆復元ツール
+    </h1>
+
+    <p class="desc">
+      UTF-8 / Shift_JIS / Latin1 の誤解釈を利用して、<br>
+      実際の文字化けを再現・復元します。
+    </p>
+
+    <!-- モード説明 -->
+    <div class="card">
+
+      <h2>モード説明</h2>
+
+      <div class="mode-info">
+
+        <strong>SJIS風</strong><br>
+        「縺薙ｓ縺ｫ縺｡縺ｯ」のような、
+        日本語環境特有の派手な文字化け。<br>
+        見た目は面白いですが、
+        一部文字が欠損する場合があります。
+        <br><br>
+
+        <strong>Latin1風</strong><br>
+        「ã“ã‚“ã«ã¡ã¯」のような、
+        Webサイトで多い文字化け。<br>
+        復元精度が高い方式です。
+
+      </div>
+
+    </div>
+
+    <!-- 生成 -->
+    <div class="card">
+
+      <h2>文字化け生成</h2>
+
+      <div class="label">
+        モード
+      </div>
+
+      <select id="generateMode">
+
+        <option value="sjis">
+          SJIS風（派手・復元弱）
+        </option>
+
+        <option value="latin1">
+          Latin1風（Web系・復元強）
+        </option>
+
+      </select>
+
+      <div class="label">
+        正常な文章
+      </div>
+
+      <textarea
+        id="normalText"
+        placeholder="こんにちは"
+      ></textarea>
+
+      <button id="generateBtn">
+        文字化け生成
+      </button>
+
+      <div class="label">
+        文字化け結果
+      </div>
+
+      <textarea
+        id="mojibakeResult"
+        readonly
+      ></textarea>
+
+      <button
+        class="copy-btn"
+        id="copyMojibake"
+      >
+        コピー
+      </button>
+
+    </div>
+
+    <!-- 復元 -->
+    <div class="card">
+
+      <h2>文字化け復元</h2>
+
+      <div class="label">
+        モード
+      </div>
+
+      <select id="restoreMode">
+
+        <option value="sjis">
+          SJIS風
+        </option>
+
+        <option value="latin1">
+          Latin1風
+        </option>
+
+      </select>
+
+      <div class="label">
+        文字化け文章
+      </div>
+
+      <textarea
+        id="brokenText"
+        placeholder="縺薙ｓ縺ｫ縺｡縺ｯ"
+      ></textarea>
+
+      <button id="restoreBtn">
+        復元する
+      </button>
+
+      <div class="label">
+        復元結果
+      </div>
+
+      <textarea
+        id="restoreResult"
+        readonly
+      ></textarea>
+
+      <button
+        class="copy-btn"
+        id="copyRestore"
+      >
+        コピー
+      </button>
+
+    </div>
+
+    <footer>
+      © ToolDock
+    </footer>
+
+  </div>
+
+  <script>
+
+    // =========================
+    // 文字化け生成
+    // =========================
+
+    document
+      .getElementById("generateBtn")
+      .addEventListener("click", () => {
+
+      const text =
+        document.getElementById(
+          "normalText"
+        ).value;
+
+      const mode =
+        document.getElementById(
+          "generateMode"
+        ).value;
+
+      try {
+
+        let result = "";
+
+        // =====================
+        // SJIS風
+        // =====================
+
+        if (mode === "sjis") {
+
+          const utf8Bytes =
+            new TextEncoder()
+              .encode(text);
+
+          result =
+            Encoding.convert(
+              utf8Bytes,
+              {
+                to: "UNICODE",
+                from: "SJIS",
+                type: "string"
+              }
+            );
+
+        }
+
+        // =====================
+        // Latin1風
+        // =====================
+
+        else if (mode === "latin1") {
+
+          const utf8Bytes =
+            new TextEncoder()
+              .encode(text);
+
+          for (const b of utf8Bytes) {
+
+            result +=
+              String.fromCharCode(b);
+
+          }
+
+        }
+
+        document
+          .getElementById(
+            "mojibakeResult"
+          ).value = result;
+
+      }
+
+      catch (e) {
+
+        alert("生成失敗");
+
+        console.error(e);
+
+      }
+
+    });
+
+    // =========================
+    // 復元
+    // =========================
+
+    document
+      .getElementById("restoreBtn")
+      .addEventListener("click", () => {
+
+      const broken =
+        document.getElementById(
+          "brokenText"
+        ).value;
+
+      const mode =
+        document.getElementById(
+          "restoreMode"
+        ).value;
+
+      try {
+
+        let restored = "";
+
+        // =====================
+        // SJIS風復元
+        // =====================
+
+        if (mode === "sjis") {
+
+          const sjisBytes =
+            Encoding.convert(
+              broken,
+              {
+                to: "SJIS",
+                from: "UNICODE",
+                type: "array"
+              }
+            );
+
+          restored =
+            new TextDecoder("utf-8")
+              .decode(
+                new Uint8Array(
+                  sjisBytes
+                )
+              );
+
+        }
+
+        // =====================
+        // Latin1風復元
+        // =====================
+
+        else if (mode === "latin1") {
+
+          const bytes = [];
+
+          for (
+            let i = 0;
+            i < broken.length;
+            i++
+          ) {
+
+            bytes.push(
+              broken.charCodeAt(i)
+            );
+
+          }
+
+          restored =
+            new TextDecoder()
+              .decode(
+                new Uint8Array(bytes)
+              );
+
+        }
+
+        document
+          .getElementById(
+            "restoreResult"
+          ).value = restored;
+
+      }
+
+      catch (e) {
+
+        alert("復元失敗");
+
+        console.error(e);
+
+      }
+
+    });
+
+    // =========================
+    // コピー
+    // =========================
+
+    async function copyText(id) {
+
+      try {
+
+        const text =
+          document.getElementById(id)
+            .value;
+
+        await navigator
+          .clipboard
+          .writeText(text);
+
+        alert("コピーしました");
+
+      }
+
+      catch {
+
+        alert("コピー失敗");
+
+      }
+
+    }
+
+    document
+      .getElementById(
+        "copyMojibake"
+      )
+      .addEventListener("click", () => {
+
+      copyText("mojibakeResult");
+
+    });
+
+    document
+      .getElementById(
+        "copyRestore"
+      )
+      .addEventListener("click", () => {
+
+      copyText("restoreResult");
+
+    });
+
+    // =========================
+    // localStorage
+    // =========================
+
+    const normalText =
+      document.getElementById(
+        "normalText"
+      );
+
+    const brokenText =
+      document.getElementById(
+        "brokenText"
+      );
+
+    window.addEventListener("load", () => {
+
+      normalText.value =
+        localStorage.getItem(
+          "normalText"
+        ) || "";
+
+      brokenText.value =
+        localStorage.getItem(
+          "brokenText"
+        ) || "";
+
+    });
+
+    normalText.addEventListener(
+      "input",
+      () => {
+
+      localStorage.setItem(
+        "normalText",
+        normalText.value
+      );
+
+    });
+
+    brokenText.addEventListener(
+      "input",
+      () => {
+
+      localStorage.setItem(
+        "brokenText",
+        brokenText.value
+      );
+
+    });
+
+  </script>
+
+</body>
+</html>
