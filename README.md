@@ -12,7 +12,7 @@ h
 h
 
 # ボディの最後
-
+b
 <div id="related-tools"></div>
 <script src="/js/related.js"></script>
 b
