@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>QRコード作成ツール | ToolDock</title>
+  <meta name="description" content="URL・テキスト・Wi-Fi情報からQRコードを無料で生成。PNG保存対応。スマホでも簡単に使えるQRコード作成ツール。">
+  <meta name="keywords" content="QRコード, QRコード作成, QR生成, QRコードメーカー, 無料ツール">
+  <meta name="robots" content="index, follow">
+
+  <!-- OGP -->
+  <meta property="og:title" content="QRコード作成ツール | ToolDock">
+  <meta property="og:description" content="URL・Wi-Fi・テキストをQRコード化。PNG保存対応。">
+  <meta property="og:type" content="website">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- 共通CSS -->
+  <link rel="stylesheet" href="../css/common.css">
+
+  <!-- SEO共通JS -->
+  <script src="../js/seo.js" defer></script>
+
+  <!-- QRCode.js -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #f5f7fb;
+      font-family: sans-serif;
+      color: #222;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 2rem;
+    }
+
+    .description {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #555;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    textarea,
+    input,
+    select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 1rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: #2563eb;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    #qrcode-container {
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    canvas {
+      max-width: 100%;
+      border-radius: 12px;
+    }
+
+    .save-button {
+      margin-top: 20px;
+      background: #16a34a;
+    }
+
+    .save-button:hover {
+      background: #15803d;
+    }
+
+    .note {
+      margin-top: 15px;
+      font-size: 0.9rem;
+      color: #666;
+      text-align: center;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 50px;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 14px;
+      }
+
+      .card {
+        padding: 18px;
+      }
+
+      h1 {
+        font-size: 1.6rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h1>QRコード作成ツール</h1>
+
+    <p class="description">
+      URL・テキスト・Wi-Fi情報などをQRコード化できます。
+    </p>
+
+    <div class="card">
+
+      <label for="type">QRコードの種類</label>
+      <select id="type">
+        <option value="text">テキスト / URL</option>
+        <option value="wifi">Wi-Fi</option>
+      </select>
+
+      <div id="text-area">
+        <label for="content">内容</label>
+        <textarea id="content" rows="5" placeholder="https://example.com"></textarea>
+      </div>
+
+      <div id="wifi-area" style="display:none;">
+        <label for="ssid">Wi-Fi名（SSID）</label>
+        <input type="text" id="ssid" placeholder="MyWiFi">
+
+        <label for="password">パスワード</label>
+        <input type="text" id="password" placeholder="password123">
+
+        <label for="encryption">暗号化方式</label>
+        <select id="encryption">
+          <option value="WPA">WPA/WPA2</option>
+          <option value="WEP">WEP</option>
+          <option value="nopass">なし</option>
+        </select>
+      </div>
+
+      <button id="generate-btn">QRコード生成</button>
+
+      <div id="qrcode-container"></div>
+
+    </div>
+
+    <footer>
+      © ToolDock
+    </footer>
+
+  </div>
+
+  <script>
+    const typeSelect = document.getElementById("type");
+    const textArea = document.getElementById("text-area");
+    const wifiArea = document.getElementById("wifi-area");
+    const generateBtn = document.getElementById("generate-btn");
+    const qrContainer = document.getElementById("qrcode-container");
+
+    let currentCanvas = null;
+
+    // localStorage復元
+    window.addEventListener("load", () => {
+      const savedType = localStorage.getItem("qr_type");
+      const savedContent = localStorage.getItem("qr_content");
+
+      if (savedType) {
+        typeSelect.value = savedType;
+        updateMode();
+      }
+
+      if (savedContent) {
+        document.getElementById("content").value = savedContent;
+      }
+    });
+
+    typeSelect.addEventListener("change", updateMode);
+
+    function updateMode() {
+      if (typeSelect.value === "wifi") {
+        textArea.style.display = "none";
+        wifiArea.style.display = "block";
+      } else {
+        textArea.style.display = "block";
+        wifiArea.style.display = "none";
+      }
+    }
+
+    generateBtn.addEventListener("click", async () => {
+
+      qrContainer.innerHTML = "";
+
+      let qrText = "";
+
+      if (typeSelect.value === "wifi") {
+
+        const ssid = document.getElementById("ssid").value;
+        const password = document.getElementById("password").value;
+        const encryption = document.getElementById("encryption").value;
+
+        qrText = `WIFI:T:${encryption};S:${ssid};P:${password};;`;
+
+      } else {
+
+        qrText = document.getElementById("content").value;
+
+      }
+
+      if (!qrText.trim()) {
+        alert("内容を入力してください。");
+        return;
+      }
+
+      localStorage.setItem("qr_type", typeSelect.value);
+      localStorage.setItem("qr_content", qrText);
+
+      const canvas = document.createElement("canvas");
+
+      try {
+
+        await QRCode.toCanvas(canvas, qrText, {
+          width: 320,
+          margin: 2
+        });
+
+        qrContainer.appendChild(canvas);
+
+        currentCanvas = canvas;
+
+        const saveButton = document.createElement("button");
+        saveButton.textContent = "PNG保存";
+        saveButton.className = "save-button";
+
+        saveButton.addEventListener("click", saveImage);
+
+        qrContainer.appendChild(saveButton);
+
+        const note = document.createElement("div");
+        note.className = "note";
+        note.innerHTML = `
+          iPhoneで保存できない場合は、画像を長押しするかスクリーンショットをご利用ください。
+        `;
+
+        qrContainer.appendChild(note);
+
+      } catch (err) {
+
+        console.error(err);
+        alert("QRコード生成に失敗しました。");
+
+      }
+
+    });
+
+    function saveImage() {
+
+      if (!currentCanvas) return;
+
+      const link = document.createElement("a");
+
+      link.href = currentCanvas.toDataURL("image/png");
+      link.download = "qrcode.png";
+
+      link.click();
+
+    }
+  </script>
+
+</body>
+</html>
