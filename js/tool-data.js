@@ -40,11 +40,11 @@ const TOOLS = [
   },
 
   {
-    id: "seiki",
-    title: "regex正規化ツール",
-    desc: "regexを正規化するツール。",
-    category: "work",
-    url: "/seiki/"
+    id: "mojibake",
+    title: "文字化け生成・復元ツール",
+    desc: "テキスト列を文字化けさせるツール。復元も同じサイトで可能。",
+    category: "life",
+    url: "/mojibake/"
   },
 
   {
@@ -53,6 +53,14 @@ const TOOLS = [
     desc: "regexを正規化するツール。",
     category: "work",
     url: "/seiki/"
+  },
+
+  {
+    id: "qr",
+    title: "QRコード作成ツール",
+    desc: "URLやWi-fiをQRコードに変換するツール。",
+    category: "work",
+    url: "/qr/"
   },
 
   {
