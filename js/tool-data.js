@@ -104,6 +104,14 @@ window.TOOLS = [
   },
 
   {
+    id: "category",
+    title: "カテゴリ",
+    desc: "カテゴリ表示用です",
+    category: " ",
+    url: "/category/"
+  },
+
+  {
     id: "counter",
     title: "文字数カウント",
     desc: "シンプルな文字数カウンタ。ブラウザだけで動作します。",
