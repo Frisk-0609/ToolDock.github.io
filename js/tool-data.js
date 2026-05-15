@@ -1,4 +1,4 @@
-const TOOLS = [
+window.TOOLS = [
   {
     id: "roulette",
     title: "ルーレット",
