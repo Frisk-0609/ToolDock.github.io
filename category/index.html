@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+
+<head>
+
+  <script src="/tool-data.js"></script>
+
+  <style>
+
+    body{
+      font-family:sans-serif;
+      max-width:900px;
+      margin:auto;
+      padding:20px;
+    }
+
+    h1{
+      margin-bottom:24px;
+    }
+
+    .tool-grid{
+      display:grid;
+      grid-template-columns:
+        repeat(auto-fill,minmax(240px,1fr));
+      gap:16px;
+    }
+
+    .tool-card{
+      display:block;
+      border:1px solid #ddd;
+      border-radius:12px;
+      padding:16px;
+      text-decoration:none;
+      color:inherit;
+      transition:.2s;
+    }
+
+    .tool-card:hover{
+      transform:translateY(-2px);
+      border-color:#2563eb;
+    }
+
+    .tool-card h2{
+      margin-top:0;
+      margin-bottom:8px;
+      font-size:18px;
+    }
+
+    .tool-card p{
+      margin:0;
+      color:#666;
+      font-size:14px;
+      line-height:1.6;
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <h1 id="category-title"></h1>
+
+  <div class="tool-grid"
+       id="tool-list"></div>
+
+  <script>
+
+    const params =
+      new URLSearchParams(location.search);
+
+    const cat = params.get("cat");
+
+    const categoryNames = {
+      life: "生活",
+      math: "数学",
+      text: "文字列",
+      baseball: "野球"
+    };
+
+    const categoryLabel =
+      categoryNames[cat] || cat;
+
+    document.title =
+      categoryLabel + "ツール | ToolDock";
+
+    document.getElementById(
+      "category-title"
+    ).textContent =
+      categoryLabel + "ツール";
+
+    const list =
+      TOOLS.filter(
+        t => t.category === cat
+      );
+
+    const container =
+      document.getElementById(
+        "tool-list"
+      );
+
+    container.innerHTML =
+      list.map(tool => `
+        <a class="tool-card"
+           href="${tool.url}">
+
+          <h2>${tool.title}</h2>
+
+          <p>${tool.desc}</p>
+
+        </a>
+      `).join("");
+
+  </script>
+
+</body>
+</html>
