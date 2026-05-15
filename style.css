@@ -60,3 +60,30 @@ footer {
 .related-tool-card h3 {
   margin-top: 0;
 }
+
+const style = document.createElement("style");
+
+style.textContent = `
+.breadcrumb{
+  font-size:14px;
+  color:#666;
+  padding:10px 20px;
+  margin-bottom:10px;
+}
+
+.breadcrumb a{
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.breadcrumb a:hover{
+  text-decoration:underline;
+}
+
+.bc-sep{
+  margin:0 6px;
+  color:#999;
+}
+`;
+
+document.head.appendChild(style);
