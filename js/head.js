@@ -159,6 +159,53 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.body.prepend(nav);
 
+    /* =========================
+     お客様
+  ========================= */
+
+  // counter.js
+
+async function setupCounters() {
+
+    // URLからページ識別子を作成
+    const pageKey = location.pathname
+        .replace(/\//g, "_")
+        .replace(/^_/, "")
+        || "home";
+
+    // サイト全体カウンタ
+    const totalUrl =
+        "https://api.countapi.xyz/hit/tooldock/total-visits";
+
+    // ページ別カウンタ
+    const pageUrl =
+        `https://api.countapi.xyz/hit/tooldock/${pageKey}`;
+
+    try {
+
+        // 並列取得
+        const [totalRes, pageRes] = await Promise.all([
+            fetch(totalUrl),
+            fetch(pageUrl)
+        ]);
+
+        const totalData = await totalRes.json();
+        const pageData = await pageRes.json();
+
+        // 表示
+        document.getElementById("total-counter").textContent =
+            totalData.value.toLocaleString();
+
+        document.getElementById("page-counter").textContent =
+            pageData.value.toLocaleString();
+
+    } catch (e) {
+        console.error("Counter error:", e);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", setupCounters);
+
   /* =========================
      Breadcrumb JSON-LD
   ========================= */
