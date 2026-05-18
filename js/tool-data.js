@@ -15,6 +15,15 @@ window.TOOLS = [
     url: "/i_roulette/"
   },
 
+  
+  {
+    id: "h_roulette",
+    title: "ギリギリまで結果が分からないヒリつくルーレット🔥",
+    desc: "急加速、急停止、跳ね返り、逆回転、停止時の揺れ...とにかく最後まで読めない無料の激アツルーレットツール。",
+    category: "life",
+    url: "/h_roulette/"
+  },
+
   {
     id: "todolist",
     title: "Todoリスト",
