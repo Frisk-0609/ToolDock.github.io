@@ -162,56 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =========================
      お客様
   ========================= */
-document.addEventListener("DOMContentLoaded", async () => {
-
-    const counterEl = document.getElementById("view-counter");
-
-    if (!counterEl) return;
-
-    const pageKey =
-        location.pathname
-            .replaceAll("/", "_")
-            .replaceAll(".", "_");
-
-    const viewedKey = `viewed_${pageKey}`;
-
-    try {
-
-        let apiUrl;
-
-        // 同一セッションで未閲覧なら加算
-        if (!sessionStorage.getItem(viewedKey)) {
-
-            apiUrl =
-                `https://api.countapi.xyz/hit/tooldock/${pageKey}`;
-
-            sessionStorage.setItem(viewedKey, "true");
-
-        } else {
-
-            // 既閲覧なら取得のみ
-            apiUrl =
-                `https://api.countapi.xyz/get/tooldock/${pageKey}`;
-
-        }
-
-        const response = await fetch(apiUrl);
-
-        const data = await response.json();
-
-        counterEl.textContent =
-            `あなたは ${data.value.toLocaleString()} 人目のお客様です`;
-
-    } catch (error) {
-
-        console.error("閲覧者カウンタ取得失敗:", error);
-
-        counterEl.textContent =
-            "閲覧者数を取得できませんでした";
-
-    }
-
-});
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
   /* =========================
      Breadcrumb JSON-LD
   ========================= */
