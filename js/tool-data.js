@@ -1,10 +1,18 @@
 window.TOOLS = [
   {
     id: "roulette",
-    title: "ルーレット",
+    title: "Webルーレット",
     desc: "抽選やランダム選択ができる無料ルーレットツール。",
     category: "life",
     url: "/roulette/"
+  },
+
+  {
+    id: "i_roulette",
+    title: "イカサマルーレット",
+    desc: "指定した回に思い通りの確率で、思い通りの選択肢を当選させられる、無料イカサマルーレットツール。",
+    category: "life",
+    url: "/i_roulette/"
   },
 
   {
