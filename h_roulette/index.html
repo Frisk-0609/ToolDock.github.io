@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+<script>
+const CURRENT_TOOL = "roulette";
+</script>
+
+<script src="/js/tool-data.js"></script>
+<script src="/js/head.js"></script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  text-align:center;
+  font-family:sans-serif;
+  background:#f2f2f2;
+  margin:0;
+  padding:20px;
+}
+
+h1{
+  margin-bottom:10px;
+}
+
+#result{
+  font-size:28px;
+  font-weight:bold;
+  height:40px;
+  margin-bottom:15px;
+  color:#e74c3c;
+}
+
+.wrapper{
+  position:relative;
+  width:420px;
+  height:420px;
+  margin:0 auto;
+}
+
+canvas{
+  background:white;
+  border-radius:50%;
+  box-shadow:0 5px 15px rgba(0,0,0,0.2);
+}
+
+.pointer{
+  position:absolute;
+  top:-5px;
+  left:50%;
+  transform:translateX(-50%);
+  width:0;
+  height:0;
+
+  border-left:14px solid transparent;
+  border-right:14px solid transparent;
+  border-top:34px solid #e74c3c;
+
+  z-index:10;
+}
+
+button,input{
+  padding:8px 12px;
+  margin:5px;
+  font-size:16px;
+}
+
+.desc{
+  margin-top:25px;
+  color:#555;
+  line-height:1.8;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>🔥 ヒリつくルーレット</h1>
+
+<div id="result"></div>
+
+<div class="wrapper">
+  <div class="pointer"></div>
+  <canvas id="wheel" width="420" height="420"></canvas>
+</div>
+
+<div style="margin-top:15px;">
+  <input id="itemInput" value="A,B,C,D,E">
+  <button onclick="updateItems()">更新</button>
+  <button onclick="spin()">回す</button>
+</div>
+
+<div class="desc">
+急加速・急減速・急停止・境界跳ね返り・逆回転入り。<br>
+揺れ演出は削除済み。
+</div>
+
+<script>
+
+const canvas =
+  document.getElementById("wheel");
+
+const ctx =
+  canvas.getContext("2d");
+
+const resultEl =
+  document.getElementById("result");
+
+let items = [];
+let colors = [];
+
+let angle = 0;
+let spinning = false;
+
+// ======================
+// 音
+// ======================
+
+const audioCtx =
+  new (window.AudioContext || window.webkitAudioContext)();
+
+function playTick(){
+
+  const osc =
+    audioCtx.createOscillator();
+
+  const gain =
+    audioCtx.createGain();
+
+  osc.type = "square";
+
+  osc.frequency.value =
+    800 + Math.random()*300;
+
+  gain.gain.value = 0.03;
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start();
+
+  osc.stop(audioCtx.currentTime + 0.012);
+}
+
+function playWin(){
+
+  const osc =
+    audioCtx.createOscillator();
+
+  const gain =
+    audioCtx.createGain();
+
+  osc.type = "triangle";
+
+  osc.frequency.setValueAtTime(
+    700,
+    audioCtx.currentTime
+  );
+
+  osc.frequency.exponentialRampToValueAtTime(
+    1400,
+    audioCtx.currentTime + 0.4
+  );
+
+  gain.gain.setValueAtTime(
+    0.08,
+    audioCtx.currentTime
+  );
+
+  gain.gain.exponentialRampToValueAtTime(
+    0.001,
+    audioCtx.currentTime + 0.5
+  );
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start();
+
+  osc.stop(audioCtx.currentTime + 0.5);
+}
+
+// ======================
+// 色
+// ======================
+
+function genColors(n){
+
+  return Array.from(
+    {length:n},
+    (_,i)=>
+      `hsl(${i*360/n},80%,60%)`
+  );
+}
+
+// ======================
+// 描画
+// ======================
+
+function draw(){
+
+  const n = items.length;
+
+  if(!n) return;
+
+  const arc =
+    (2*Math.PI)/n;
+
+  ctx.clearRect(0,0,420,420);
+
+  for(let i=0;i<n;i++){
+
+    const start =
+      angle + i*arc;
+
+    ctx.beginPath();
+
+    ctx.moveTo(210,210);
+
+    ctx.arc(
+      210,
+      210,
+      190,
+      start,
+      start+arc
+    );
+
+    ctx.fillStyle =
+      colors[i];
+
+    ctx.fill();
+
+    ctx.stroke();
+
+    ctx.save();
+
+    ctx.translate(210,210);
+
+    ctx.rotate(start + arc/2);
+
+    ctx.fillStyle="#000";
+
+    ctx.textAlign="right";
+
+    ctx.font="18px sans-serif";
+
+    ctx.fillText(items[i],165,6);
+
+    ctx.restore();
+  }
+
+  ctx.beginPath();
+
+  ctx.arc(210,210,7,0,Math.PI*2);
+
+  ctx.fillStyle="#333";
+
+  ctx.fill();
+}
+
+// ======================
+// 判定
+// ======================
+
+function getResultIndex(){
+
+  const n = items.length;
+
+  const arc =
+    (2*Math.PI)/n;
+
+  let normalized =
+    (2*Math.PI - angle - Math.PI/2)
+    % (2*Math.PI);
+
+  if(normalized < 0){
+    normalized += 2*Math.PI;
+  }
+
+  return Math.floor(
+    normalized / arc
+  ) % n;
+}
+
+// ======================
+// 更新
+// ======================
+
+function updateItems(){
+
+  items =
+    document
+      .getElementById("itemInput")
+      .value
+      .split(",")
+      .map(v=>v.trim())
+      .filter(Boolean);
+
+  colors =
+    genColors(items.length);
+
+  draw();
+}
+
+// ======================
+// スピン
+// ======================
+
+function spin(){
+
+  if(spinning || !items.length){
+    return;
+  }
+
+  audioCtx.resume();
+
+  spinning = true;
+
+  resultEl.textContent = "";
+
+  let speed =
+    0.48 + Math.random()*0.08;
+
+  let frame = 0;
+
+  let lastTick = -1;
+
+  let reverseCooldown = 0;
+
+  const startTime =
+    performance.now();
+
+  const draggingMode =
+    Math.random() < 0.8;
+
+  function step(){
+
+    frame++;
+
+    const elapsed =
+      performance.now() - startTime;
+
+    // ======================
+    // 15秒超えで
+    // 加減速演出停止
+    // ======================
+
+    const overtime =
+      elapsed > 15000;
+
+    // ======================
+    // 急加速
+    // ======================
+
+    if(
+      !overtime &&
+      frame > 40 &&
+      Math.random() < 0.015
+    ){
+
+      speed += 0.14;
+    }
+
+    // ======================
+    // 急減速
+    // ======================
+
+    if(
+      !overtime &&
+      frame > 90 &&
+      Math.random() < 0.01
+    ){
+
+      speed *= 0.55;
+    }
+
+    // ======================
+    // 基本減速
+    // ======================
+
+    if(
+      draggingMode &&
+      Math.abs(speed) < 0.09
+    ){
+
+      speed *= 0.9978;
+
+    } else {
+
+      speed *= 0.992;
+    }
+
+    // ======================
+    // 境界判定
+    // ======================
+
+    const arc =
+      (2*Math.PI)/items.length;
+
+    const normalized =
+      (2*Math.PI - angle - Math.PI/2)
+      % arc;
+
+    const nearEdge =
+      normalized < 0.08 ||
+      normalized > arc - 0.08;
+
+    // ======================
+    // 跳ね返り
+    // ======================
+
+    if(
+      Math.abs(speed) < 0.07 &&
+      nearEdge &&
+      reverseCooldown <= 0 &&
+      Math.random() < 0.22
+    ){
+
+      speed *= -0.78;
+
+      speed +=
+        (Math.random()-0.5)
+        * 0.02;
+
+      reverseCooldown = 14;
+    }
+
+    reverseCooldown--;
+
+    // ======================
+    // 急停止
+    // ======================
+
+    if(
+      Math.abs(speed) < 0.012 &&
+      Math.random() < 0.004
+    ){
+
+      speed *= 0.08;
+    }
+
+    // ======================
+    // 回転
+    // ======================
+
+    angle += speed;
+
+    // ======================
+    // カチカチ音
+    // ======================
+
+    const current =
+      getResultIndex();
+
+    if(current !== lastTick){
+
+      playTick();
+
+      lastTick = current;
+    }
+
+    draw();
+
+    // ======================
+    // 停止
+    // ======================
+
+    if(
+      Math.abs(speed) < 0.001
+    ){
+
+      spinning = false;
+
+      const result =
+        getResultIndex();
+
+      resultEl.textContent =
+        "🎉 結果: " + items[result];
+
+      playWin();
+
+      return;
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  step();
+}
+
+// ======================
+// 初期化
+// ======================
+
+updateItems();
+
+</script>
+
+<div id="related-tools"></div>
+
+<script src="/js/related.js"></script>
+
+</body>
+</html>
