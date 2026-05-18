@@ -162,50 +162,56 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =========================
      お客様
   ========================= */
+document.addEventListener("DOMContentLoaded", async () => {
 
-  // counter.js
+    const counterEl = document.getElementById("view-counter");
 
-async function setupCounters() {
+    if (!counterEl) return;
 
-    // URLからページ識別子を作成
-    const pageKey = location.pathname
-        .replace(/\//g, "_")
-        .replace(/^_/, "")
-        || "home";
+    const pageKey =
+        location.pathname
+            .replaceAll("/", "_")
+            .replaceAll(".", "_");
 
-    // サイト全体カウンタ
-    const totalUrl =
-        "https://api.countapi.xyz/hit/tooldock/total-visits";
-
-    // ページ別カウンタ
-    const pageUrl =
-        `https://api.countapi.xyz/hit/tooldock/${pageKey}`;
+    const viewedKey = `viewed_${pageKey}`;
 
     try {
 
-        // 並列取得
-        const [totalRes, pageRes] = await Promise.all([
-            fetch(totalUrl),
-            fetch(pageUrl)
-        ]);
+        let apiUrl;
 
-        const totalData = await totalRes.json();
-        const pageData = await pageRes.json();
+        // 同一セッションで未閲覧なら加算
+        if (!sessionStorage.getItem(viewedKey)) {
 
-        // 表示
-        document.getElementById("total-counter").textContent =
-            totalData.value.toLocaleString();
+            apiUrl =
+                `https://api.countapi.xyz/hit/tooldock/${pageKey}`;
 
-        document.getElementById("page-counter").textContent =
-            pageData.value.toLocaleString();
+            sessionStorage.setItem(viewedKey, "true");
 
-    } catch (e) {
-        console.error("Counter error:", e);
+        } else {
+
+            // 既閲覧なら取得のみ
+            apiUrl =
+                `https://api.countapi.xyz/get/tooldock/${pageKey}`;
+
+        }
+
+        const response = await fetch(apiUrl);
+
+        const data = await response.json();
+
+        counterEl.textContent =
+            `あなたは ${data.value.toLocaleString()} 人目のお客様です`;
+
+    } catch (error) {
+
+        console.error("閲覧者カウンタ取得失敗:", error);
+
+        counterEl.textContent =
+            "閲覧者数を取得できませんでした";
+
     }
-}
 
-document.addEventListener("DOMContentLoaded", setupCounters);
-
+});
   /* =========================
      Breadcrumb JSON-LD
   ========================= */
