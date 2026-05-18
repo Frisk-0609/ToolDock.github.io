@@ -3,7 +3,7 @@
 <head>
 
 <script>
-const CURRENT_TOOL = "i_roulette";
+const CURRENT_TOOL = "roulette";
 </script>
 
 <script src="/js/tool-data.js"></script>
@@ -107,12 +107,12 @@ button {
   <h3>🎲 イカサマ設定</h3>
 
   <div>
-    <label>〇回目に：</label>
+    <label>〇回目：</label>
     <input type="number" id="targetSpin" value="1" min="1" style="width:80px;">
   </div>
 
   <div>
-    <label>出したい項目：</label>
+    <label>出す項目：</label>
     <select id="targetItem"></select>
   </div>
 
@@ -124,8 +124,7 @@ button {
 </div>
 
 <p style="margin-top:25px;">
-指定した回にのみ、思い通りの確率で指定した結果を出せるイカサマルーレットです。<br>
-指定した回以外は、通常ルーレットとして動作します。回をリセットしたい場合は、サイトを再読み込みしてください。
+指定回数のみ高確率で特定結果を出せるルーレットです。
 </p>
 
 <script>
@@ -139,6 +138,66 @@ let colors = [];
 let angle = 0;
 let spinning = false;
 let spinCount = 0;
+
+// ======================
+// 音
+// ======================
+
+const audioCtx =
+  new (window.AudioContext || window.webkitAudioContext)();
+
+function playTick() {
+
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = "square";
+  osc.frequency.value = 900;
+
+  gain.gain.value = 0.03;
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start();
+
+  osc.stop(audioCtx.currentTime + 0.015);
+}
+
+function playWin() {
+
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = "triangle";
+
+  osc.frequency.setValueAtTime(
+    600,
+    audioCtx.currentTime
+  );
+
+  osc.frequency.exponentialRampToValueAtTime(
+    1200,
+    audioCtx.currentTime + 0.25
+  );
+
+  gain.gain.setValueAtTime(
+    0.08,
+    audioCtx.currentTime
+  );
+
+  gain.gain.exponentialRampToValueAtTime(
+    0.001,
+    audioCtx.currentTime + 0.4
+  );
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start();
+
+  osc.stop(audioCtx.currentTime + 0.4);
+}
 
 // ======================
 // 色生成
@@ -242,6 +301,8 @@ function spin() {
 
   if (spinning || !items.length) return;
 
+  audioCtx.resume();
+
   spinning = true;
 
   resultEl.textContent = "";
@@ -252,12 +313,12 @@ function spin() {
 
   const arc = (2*Math.PI)/n;
 
-  // 通常ルーレット挙動
-
   let speed = 0.35 + Math.random()*0.08;
 
   const decel =
     0.0025 + Math.random()*0.0005;
+
+  let lastTickIndex = -1;
 
   // ======================
   // イカサマ設定
@@ -310,12 +371,16 @@ function spin() {
       resultEl.textContent =
         "🎉 結果: " + items[result];
 
+      playWin();
+
       return;
     }
 
     angle += speed;
 
     speed -= decel;
+
+    handleTick();
 
     draw();
 
@@ -326,37 +391,93 @@ function spin() {
   // イカサマ停止
   // ======================
 
+  let targetAngle = null;
+
   function cheatStep() {
 
-    if (speed <= 0.03) {
+    // 通常回転中
 
-      // 最後だけ微調整
+    if (speed > 0.03) {
 
-      const target =
-        (2*Math.PI)
-        - (forcedIndex * arc)
-        - (arc/2)
-        - Math.PI/2;
+      angle += speed;
 
-      angle = target;
+      speed -= decel;
 
-      draw();
+    } else {
 
-      spinning = false;
+      // 初回だけ目標決定
 
-      resultEl.textContent =
-        "🎉 結果: " + items[forcedIndex];
+      if (targetAngle === null) {
 
-      return;
+        // 中央を避ける
+
+        const margin = arc * 0.15;
+
+        const randomOffset =
+          (Math.random() * (arc - margin*2))
+          + margin;
+
+        targetAngle =
+          (2*Math.PI)
+          - (forcedIndex * arc)
+          - randomOffset
+          - Math.PI/2;
+      }
+
+      // 自然に寄せる
+
+      let diff =
+        targetAngle - angle;
+
+      while (diff > Math.PI)
+        diff -= Math.PI*2;
+
+      while (diff < -Math.PI)
+        diff += Math.PI*2;
+
+      angle += diff * 0.12;
+
+      // 収束したら停止
+
+      if (Math.abs(diff) < 0.002) {
+
+        angle = targetAngle;
+
+        draw();
+
+        spinning = false;
+
+        resultEl.textContent =
+          "🎉 結果: " + items[forcedIndex];
+
+        playWin();
+
+        return;
+      }
     }
 
-    angle += speed;
-
-    speed -= decel;
+    handleTick();
 
     draw();
 
     requestAnimationFrame(cheatStep);
+  }
+
+  // ======================
+  // カチカチ音
+  // ======================
+
+  function handleTick() {
+
+    const currentIndex =
+      getResultIndex();
+
+    if (currentIndex !== lastTickIndex) {
+
+      playTick();
+
+      lastTickIndex = currentIndex;
+    }
   }
 
   // ======================
@@ -418,8 +539,6 @@ function updateSelect() {
     select.appendChild(option);
   });
 
-  // 初期設定
-
   if (items.length) {
 
     select.value = items[0];
@@ -440,6 +559,7 @@ init();
 </script>
 
 <div id="related-tools"></div>
+
 <script src="/js/related.js"></script>
 
 </body>
