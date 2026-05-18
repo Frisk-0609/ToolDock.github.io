@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+<script>
+const CURRENT_TOOL = "i_roulette";
+</script>
+
+<script src="/js/tool-data.js"></script>
+<script src="/js/head.js"></script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  text-align: center;
+  font-family: sans-serif;
+  background: #f2f2f2;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  margin-bottom: 10px;
+}
+
+#result {
+  font-size: 24px;
+  font-weight: bold;
+  height: 40px;
+  margin-bottom: 10px;
+  color: #e74c3c;
+}
+
+.wrapper {
+  position: relative;
+  width: 400px;
+  height: 400px;
+  margin: 0 auto;
+}
+
+canvas {
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.pointer {
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 30px solid #e74c3c;
+
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.4));
+  z-index: 10;
+}
+
+input, select {
+  padding: 8px;
+  margin: 5px;
+}
+
+button {
+  padding: 8px 14px;
+  margin: 5px;
+  cursor: pointer;
+}
+
+.settings {
+  margin-top: 20px;
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  display: inline-block;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>🎯 イカサマルーレット</h1>
+
+<div id="result"></div>
+
+<div class="wrapper">
+  <div class="pointer"></div>
+  <canvas id="wheel" width="400" height="400"></canvas>
+</div>
+
+<div style="margin-top:15px;">
+  <input id="itemInput" value="A,B,C,D,E">
+  <button onclick="updateItems()">更新</button>
+  <button onclick="spin()">回す</button>
+</div>
+
+<div class="settings">
+
+  <h3>🎲 イカサマ設定</h3>
+
+  <div>
+    <label>〇回目に：</label>
+    <input type="number" id="targetSpin" value="1" min="1" style="width:80px;">
+  </div>
+
+  <div>
+    <label>出したい項目：</label>
+    <select id="targetItem"></select>
+  </div>
+
+  <div>
+    <label>確率：</label>
+    <input type="number" id="targetChance" value="100" min="0" max="100" style="width:80px;">%
+  </div>
+
+</div>
+
+<p style="margin-top:25px;">
+指定した回にのみ、思い通りの確率で指定した結果を出せるイカサマルーレットです。<br>
+指定した回以外は、通常ルーレットとして動作します。回をリセットしたい場合は、サイトを再読み込みしてください。
+</p>
+
+<script>
+
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const resultEl = document.getElementById("result");
+
+let items = [];
+let colors = [];
+let angle = 0;
+let spinning = false;
+let spinCount = 0;
+
+// ======================
+// 色生成
+// ======================
+
+function genColors(n) {
+
+  return Array.from({length:n}, (_,i)=>
+    `hsl(${i*360/n},80%,60%)`
+  );
+}
+
+// ======================
+// 描画
+// ======================
+
+function draw() {
+
+  const n = items.length;
+
+  if (!n) return;
+
+  const arc = (2*Math.PI)/n;
+
+  ctx.clearRect(0,0,400,400);
+
+  for (let i=0;i<n;i++) {
+
+    const start = angle + i*arc;
+
+    ctx.beginPath();
+
+    ctx.moveTo(200,200);
+
+    ctx.arc(
+      200,
+      200,
+      180,
+      start,
+      start+arc
+    );
+
+    ctx.fillStyle = colors[i];
+
+    ctx.fill();
+
+    ctx.stroke();
+
+    ctx.save();
+
+    ctx.translate(200,200);
+
+    ctx.rotate(start + arc/2);
+
+    ctx.fillStyle="#000";
+
+    ctx.textAlign="right";
+
+    ctx.font="16px sans-serif";
+
+    ctx.fillText(items[i],160,5);
+
+    ctx.restore();
+  }
+
+  ctx.beginPath();
+
+  ctx.arc(200,200,6,0,Math.PI*2);
+
+  ctx.fillStyle="#333";
+
+  ctx.fill();
+}
+
+// ======================
+// 判定
+// ======================
+
+function getResultIndex() {
+
+  const n = items.length;
+
+  const arc = (2*Math.PI)/n;
+
+  let normalized =
+    (2*Math.PI - angle - Math.PI/2)
+    % (2*Math.PI);
+
+  if (normalized < 0) {
+    normalized += 2*Math.PI;
+  }
+
+  return Math.floor(normalized / arc) % n;
+}
+
+// ======================
+// スピン
+// ======================
+
+function spin() {
+
+  if (spinning || !items.length) return;
+
+  spinning = true;
+
+  resultEl.textContent = "";
+
+  spinCount++;
+
+  const n = items.length;
+
+  const arc = (2*Math.PI)/n;
+
+  // 通常ルーレット挙動
+
+  let speed = 0.35 + Math.random()*0.08;
+
+  const decel =
+    0.0025 + Math.random()*0.0005;
+
+  // ======================
+  // イカサマ設定
+  // ======================
+
+  const targetSpin =
+    parseInt(
+      document.getElementById("targetSpin").value
+    );
+
+  const targetItem =
+    document.getElementById("targetItem").value;
+
+  const targetChance =
+    parseFloat(
+      document.getElementById("targetChance").value
+    );
+
+  let cheating = false;
+
+  let forcedIndex = -1;
+
+  if (spinCount === targetSpin) {
+
+    const rand = Math.random()*100;
+
+    if (rand <= targetChance) {
+
+      forcedIndex = items.indexOf(targetItem);
+
+      if (forcedIndex >= 0) {
+
+        cheating = true;
+      }
+    }
+  }
+
+  // ======================
+  // 通常停止
+  // ======================
+
+  function normalStep() {
+
+    if (speed <= 0) {
+
+      spinning = false;
+
+      const result = getResultIndex();
+
+      resultEl.textContent =
+        "🎉 結果: " + items[result];
+
+      return;
+    }
+
+    angle += speed;
+
+    speed -= decel;
+
+    draw();
+
+    requestAnimationFrame(normalStep);
+  }
+
+  // ======================
+  // イカサマ停止
+  // ======================
+
+  function cheatStep() {
+
+    if (speed <= 0.03) {
+
+      // 最後だけ微調整
+
+      const target =
+        (2*Math.PI)
+        - (forcedIndex * arc)
+        - (arc/2)
+        - Math.PI/2;
+
+      angle = target;
+
+      draw();
+
+      spinning = false;
+
+      resultEl.textContent =
+        "🎉 結果: " + items[forcedIndex];
+
+      return;
+    }
+
+    angle += speed;
+
+    speed -= decel;
+
+    draw();
+
+    requestAnimationFrame(cheatStep);
+  }
+
+  // ======================
+  // 分岐
+  // ======================
+
+  if (cheating) {
+
+    cheatStep();
+
+  } else {
+
+    normalStep();
+  }
+}
+
+// ======================
+// 項目更新
+// ======================
+
+function updateItems() {
+
+  const input =
+    document.getElementById("itemInput").value;
+
+  items =
+    input
+      .split(",")
+      .map(v=>v.trim())
+      .filter(Boolean);
+
+  colors = genColors(items.length);
+
+  updateSelect();
+
+  draw();
+}
+
+// ======================
+// セレクト更新
+// ======================
+
+function updateSelect() {
+
+  const select =
+    document.getElementById("targetItem");
+
+  select.innerHTML = "";
+
+  items.forEach(item=>{
+
+    const option =
+      document.createElement("option");
+
+    option.value = item;
+
+    option.textContent = item;
+
+    select.appendChild(option);
+  });
+
+  // 初期設定
+
+  if (items.length) {
+
+    select.value = items[0];
+  }
+}
+
+// ======================
+// 初期化
+// ======================
+
+function init() {
+
+  updateItems();
+}
+
+init();
+
+</script>
+
+<div id="related-tools"></div>
+<script src="/js/related.js"></script>
+
+</body>
+</html>
