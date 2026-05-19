@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>高機能 複利シミュレーター</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+    margin:0;
+    font-family:sans-serif;
+    background:#f4f6fb;
+    color:#222;
+}
+
+header{
+    background:#1e293b;
+    color:white;
+    padding:20px;
+    text-align:center;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+    padding:20px;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:14px;
+    margin-bottom:20px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:15px;
+}
+
+label{
+    display:block;
+    margin-bottom:5px;
+    font-size:14px;
+}
+
+input,
+select{
+    width:100%;
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    box-sizing:border-box;
+}
+
+button{
+    background:#2563eb;
+    color:white;
+    border:none;
+    padding:10px 16px;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1d4ed8;
+}
+
+.stock-row,
+.schedule-row{
+    border:1px solid #ddd;
+    padding:15px;
+    border-radius:12px;
+    margin-bottom:15px;
+    position:relative;
+}
+
+.remove-btn{
+    position:absolute;
+    top:10px;
+    right:10px;
+    width:32px;
+    height:32px;
+    border:none;
+    border-radius:50%;
+    background:#ef4444;
+    color:white;
+    cursor:pointer;
+    font-size:18px;
+}
+
+.remove-btn:hover{
+    background:#dc2626;
+}
+
+.reference-box{
+    background:#f8fafc;
+    padding:12px;
+    border-radius:10px;
+    margin-top:10px;
+    line-height:1.8;
+    font-size:14px;
+}
+
+.reference-item{
+    padding:5px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.reference-item:hover{
+    background:#dbeafe;
+}
+
+.small{
+    font-size:13px;
+    color:#666;
+    line-height:1.7;
+}
+
+.result{
+    font-size:18px;
+    line-height:1.8;
+}
+
+.hidden{
+    display:none;
+}
+
+summary{
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.toggle-box{
+    margin-top:15px;
+    padding:12px;
+    background:#f8fafc;
+    border-radius:10px;
+}
+
+.toggle-label{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    cursor:pointer;
+    font-size:15px;
+}
+
+.toggle-label input{
+    width:auto;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>高機能 複利シミュレーター</h1>
+    <div>100回モンテカルロシミュレーション対応</div>
+</header>
+
+<div class="container">
+
+<div class="card">
+
+    <h2>基本設定</h2>
+
+    <div class="grid">
+
+        <div>
+            <label>投資年数</label>
+            <input type="number" id="years" value="30">
+        </div>
+
+        <div>
+            <label>現在の年齢</label>
+            <input type="number" id="startAge" value="20">
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card">
+
+    <h2>銘柄設定（最大3つ）</h2>
+
+    <div id="stocks"></div>
+
+    <button onclick="addStock()">銘柄を追加</button>
+
+    <p class="small">
+        積立比率は合計100%推奨
+    </p>
+
+</div>
+
+<div class="card">
+
+    <h2>積立設定</h2>
+
+    <div id="schedules"></div>
+
+    <button onclick="addSchedule()">積立設定を追加</button>
+
+</div>
+
+<div class="card">
+
+    <div class="toggle-box">
+
+        <label class="toggle-label">
+            <input type="checkbox" id="showExtreme">
+            最大値と最小値を表示
+        </label>
+
+    </div>
+
+    <div class="toggle-box">
+
+        <label class="toggle-label">
+            <input type="checkbox" id="showPrincipal">
+            元本を表示
+        </label>
+
+    </div>
+
+</div>
+
+<div class="card">
+
+    <button onclick="runSimulation()">
+        シミュレーション実行
+    </button>
+
+</div>
+
+<div class="card">
+
+    <h2>結果</h2>
+
+    <div class="result" id="result"></div>
+
+    <canvas id="chart" height="120"></canvas>
+
+</div>
+
+</div>
+
+<script>
+
+const referenceFunds = [
+
+    {name:"S&P500", return:10, risk:18},
+    {name:"NASDAQ100", return:13, risk:28},
+    {name:"FANG+", return:16, risk:35},
+    {name:"オールカントリー", return:8, risk:16},
+    {name:"TOPIX", return:6, risk:15},
+    {name:"半導体株", return:15, risk:40},
+    {name:"新興国株式", return:9, risk:25},
+    {name:"日経225", return:7, risk:20}
+
+];
+
+let stockCount = 0;
+let scheduleCount = 0;
+let chart = null;
+
+function createReferenceHTML(index){
+
+    let html = `
+    <details>
+
+        <summary>参考値を見る</summary>
+
+        <div class="reference-box">
+    `;
+
+    referenceFunds.forEach(f=>{
+
+        html += `
+
+        <div class="reference-item"
+        onclick="applyReference(${index}, '${f.name}', ${f.return}, ${f.risk})">
+
+            ${f.name}
+            （期待リターン ${Math.round(f.return)}%
+            / リスク ${Math.round(f.risk)}%）
+
+        </div>
+
+        `;
+    });
+
+    html += `
+
+        <div class="small" style="margin-top:10px;">
+
+        参考値出典：<br>
+        ・MSCI<br>
+        ・NASDAQ指数長期実績<br>
+        ・S&P Dow Jones Indices<br>
+        ・Bloomberg<br>
+        ・過去20〜30年程度の年率平均値を簡易化した参考値<br><br>
+
+        実際の将来リターンを保証するものではありません。
+
+        </div>
+
+        </div>
+
+    </details>
+    `;
+
+    return html;
+}
+
+function applyReference(index, name, ret, risk){
+
+    document.querySelector(`#stock-name-${index}`).value = name;
+
+    document.querySelector(`#stock-return-${index}`).value = ret;
+
+    document.querySelector(`#stock-risk-${index}`).value = risk;
+}
+
+function addStock(){
+
+    if(stockCount >= 3){
+
+        alert("最大3銘柄までです");
+        return;
+    }
+
+    stockCount++;
+
+    const index = Date.now();
+
+    const div = document.createElement("div");
+
+    div.className = "stock-row";
+
+    div.innerHTML = `
+
+    <button class="remove-btn"
+    onclick="removeStock(this)">✕</button>
+
+    <div class="grid">
+
+        <div>
+            <label>銘柄名</label>
+            <input type="text"
+            id="stock-name-${index}"
+            value="S&P500">
+        </div>
+
+        <div>
+            <label>積立比率 (%)</label>
+            <input type="number"
+            class="stock-ratio"
+            value="100">
+        </div>
+
+        <div>
+            <label>平均リターン (%)</label>
+            <input type="number"
+            id="stock-return-${index}"
+            class="stock-return"
+            value="10">
+        </div>
+
+        <div>
+            <label>平均リスク (%)</label>
+            <input type="number"
+            id="stock-risk-${index}"
+            class="stock-risk"
+            value="18">
+        </div>
+
+    </div>
+
+    ${createReferenceHTML(index)}
+
+    `;
+
+    document.getElementById("stocks")
+    .appendChild(div);
+
+    refreshStockButtons();
+}
+
+function removeStock(btn){
+
+    btn.parentElement.remove();
+
+    stockCount--;
+
+    refreshStockButtons();
+}
+
+function refreshStockButtons(){
+
+    const rows =
+    document.querySelectorAll(".stock-row");
+
+    rows.forEach(row=>{
+
+        const btn =
+        row.querySelector(".remove-btn");
+
+        if(rows.length <= 1){
+
+            btn.style.display = "none";
+
+        }else{
+
+            btn.style.display = "block";
+        }
+    });
+}
+
+function addSchedule(){
+
+    if(scheduleCount >= 4){
+
+        alert("最大4つまでです");
+        return;
+    }
+
+    scheduleCount++;
+
+    const div = document.createElement("div");
+
+    div.className = "schedule-row";
+
+    div.innerHTML = `
+
+    <button class="remove-btn"
+    onclick="removeSchedule(this)">✕</button>
+
+    <div class="grid">
+
+        <div>
+            <label>○○才から</label>
+            <input type="number"
+            class="schedule-age"
+            value="${20 + (scheduleCount-1)*10}">
+        </div>
+
+        <div>
+            <label>毎月積立額 (円)</label>
+            <input type="number"
+            class="schedule-amount"
+            value="50000">
+        </div>
+
+        <div>
+            <label>ボーナス投資</label>
+
+            <select class="bonus-enabled"
+            onchange="toggleBonus(this)">
+
+                <option value="none">なし</option>
+                <option value="yes">あり</option>
+
+            </select>
+
+        </div>
+
+    </div>
+
+    <div class="bonus-fields hidden"
+    style="margin-top:15px;">
+
+        <div class="grid">
+
+            <div>
+                <label>年何回</label>
+                <input type="number"
+                class="bonus-times"
+                value="2">
+            </div>
+
+            <div>
+                <label>1回あたり (円)</label>
+                <input type="number"
+                class="bonus-amount"
+                value="100000">
+            </div>
+
+        </div>
+
+    </div>
+
+    `;
+
+    document.getElementById("schedules")
+    .appendChild(div);
+
+    refreshScheduleButtons();
+}
+
+function removeSchedule(btn){
+
+    btn.parentElement.remove();
+
+    scheduleCount--;
+
+    refreshScheduleButtons();
+}
+
+function refreshScheduleButtons(){
+
+    const rows =
+    document.querySelectorAll(".schedule-row");
+
+    rows.forEach(row=>{
+
+        const btn =
+        row.querySelector(".remove-btn");
+
+        if(rows.length <= 1){
+
+            btn.style.display = "none";
+
+        }else{
+
+            btn.style.display = "block";
+        }
+    });
+}
+
+function toggleBonus(select){
+
+    const row =
+    select.closest(".schedule-row");
+
+    const fields =
+    row.querySelector(".bonus-fields");
+
+    if(select.value === "yes"){
+
+        fields.classList.remove("hidden");
+
+    }else{
+
+        fields.classList.add("hidden");
+    }
+}
+
+function randn_bm(){
+
+    let u = 0;
+    let v = 0;
+
+    while(u === 0) u = Math.random();
+    while(v === 0) v = Math.random();
+
+    return Math.sqrt(-2 * Math.log(u))
+    * Math.cos(2 * Math.PI * v);
+}
+
+function percentile(sortedArray, p){
+
+    const index =
+    Math.floor((sortedArray.length - 1) * p);
+
+    return sortedArray[index];
+}
+
+function runSimulation(){
+
+    const years =
+    Number(document.getElementById("years").value);
+
+    const startAge =
+    Number(document.getElementById("startAge").value);
+
+    const showExtreme =
+    document.getElementById("showExtreme").checked;
+
+    const showPrincipal =
+    document.getElementById("showPrincipal").checked;
+
+    const stocks = [];
+
+    document.querySelectorAll(".stock-row")
+    .forEach(row=>{
+
+        stocks.push({
+
+            ratio:
+            Number(row.querySelector(".stock-ratio").value) / 100,
+
+            ret:
+            Number(row.querySelector(".stock-return").value) / 100,
+
+            risk:
+            Number(row.querySelector(".stock-risk").value) / 100
+
+        });
+    });
+
+    const schedules = [];
+
+    document.querySelectorAll(".schedule-row")
+    .forEach(row=>{
+
+        schedules.push({
+
+            age:
+            Number(row.querySelector(".schedule-age").value),
+
+            amount:
+            Number(row.querySelector(".schedule-amount").value),
+
+            bonusEnabled:
+            row.querySelector(".bonus-enabled").value,
+
+            bonusTimes:
+            Number(row.querySelector(".bonus-times")?.value || 0),
+
+            bonusAmount:
+            Number(row.querySelector(".bonus-amount")?.value || 0)
+
+        });
+    });
+
+    schedules.sort((a,b)=>a.age-b.age);
+
+    const simulations = [];
+
+    const principalArr = [];
+
+    for(let sim=0; sim<100; sim++){
+
+        let asset = 0;
+
+        let principal = 0;
+
+        const yearly = [];
+
+        for(let y=0; y<years; y++){
+
+            const age = startAge + y;
+
+            let currentMonthly = 0;
+
+            let bonusEnabled = "none";
+
+            let bonusTimes = 0;
+
+            let bonusAmount = 0;
+
+            schedules.forEach(s=>{
+
+                if(age >= s.age){
+
+                    currentMonthly = s.amount;
+
+                    bonusEnabled = s.bonusEnabled;
+
+                    bonusTimes = s.bonusTimes;
+
+                    bonusAmount = s.bonusAmount;
+                }
+            });
+
+            for(let m=0; m<12; m++){
+
+                let totalMonthlyReturn = 0;
+
+                stocks.forEach(stock=>{
+
+                    // 幾何平均ベースへ補正
+                    const monthlyMean =
+                    Math.pow(1 + stock.ret, 1/12) - 1;
+
+                    // 月次ボラ
+                    const monthlyVol =
+                    stock.risk / Math.sqrt(12);
+
+                    // ボラティリティドラッグ補正
+                    const adjustedMean =
+                    monthlyMean
+                    -
+                    (
+                        monthlyVol * monthlyVol / 2
+                    );
+
+                    // 正規乱数
+                    const monthlyReturn =
+                    adjustedMean
+                    +
+                    monthlyVol * randn_bm();
+
+                    totalMonthlyReturn +=
+                    monthlyReturn * stock.ratio;
+
+                    const invest =
+                    currentMonthly * stock.ratio;
+
+                    asset += invest;
+                });
+
+                principal += currentMonthly;
+
+                asset *= (1 + totalMonthlyReturn);
+
+                asset = Math.max(asset, 0);
+            }
+
+            if(bonusEnabled === "yes"){
+
+                const yearlyBonus =
+                bonusTimes * bonusAmount;
+
+                principal += yearlyBonus;
+
+                asset += yearlyBonus;
+            }
+
+            yearly.push(
+                Math.round(asset)
+            );
+
+            if(sim === 0){
+
+                principalArr.push(
+                    Math.round(principal)
+                );
+            }
+        }
+
+        simulations.push(yearly);
+    }
+
+    const labels = [];
+
+    const top5Arr = [];
+    const top30Arr = [];
+    const medianArr = [];
+    const bottom30Arr = [];
+    const bottom5Arr = [];
+
+    const maxArr = [];
+    const minArr = [];
+
+    for(let y=0; y<years; y++){
+
+        const age =
+        startAge + y + 1;
+
+        labels.push(
+            `${y+1}年 (${age}歳)`
+        );
+
+        const values =
+        simulations
+        .map(s=>s[y])
+        .sort((a,b)=>a-b);
+
+        bottom5Arr.push(
+            Math.round(percentile(values, 0.05))
+        );
+
+        bottom30Arr.push(
+            Math.round(percentile(values, 0.30))
+        );
+
+        medianArr.push(
+            Math.round(percentile(values, 0.50))
+        );
+
+        top30Arr.push(
+            Math.round(percentile(values, 0.70))
+        );
+
+        top5Arr.push(
+            Math.round(percentile(values, 0.95))
+        );
+
+        minArr.push(
+            Math.round(values[0])
+        );
+
+        maxArr.push(
+            Math.round(values[99])
+        );
+    }
+
+    const finalMedian =
+    medianArr[medianArr.length-1];
+
+    document.getElementById("result")
+    .innerHTML = `
+
+    <b>中央値の最終資産</b><br>
+    ${finalMedian.toLocaleString()} 円
+
+    `;
+
+    const datasets = [
+
+        {
+            label:"上位5%",
+            data:top5Arr,
+            borderWidth:3
+        },
+
+        {
+            label:"上位30%",
+            data:top30Arr,
+            borderWidth:2
+        },
+
+        {
+            label:"中央値",
+            data:medianArr,
+            borderWidth:4
+        },
+
+        {
+            label:"下位30%",
+            data:bottom30Arr,
+            borderWidth:2
+        },
+
+        {
+            label:"下位5%",
+            data:bottom5Arr,
+            borderWidth:3
+        }
+
+    ];
+
+    if(showPrincipal){
+
+        datasets.push({
+
+            label:"元本",
+            data:principalArr,
+            borderWidth:2,
+            borderDash:[8,4]
+
+        });
+    }
+
+    if(showExtreme){
+
+        datasets.push({
+
+            label:"最大値",
+            data:maxArr,
+            borderWidth:1,
+            borderDash:[5,5]
+
+        });
+
+        datasets.push({
+
+            label:"最小値",
+            data:minArr,
+            borderWidth:1,
+            borderDash:[5,5]
+
+        });
+    }
+
+    const ctx =
+    document.getElementById("chart");
+
+    if(chart){
+
+        chart.destroy();
+    }
+
+    chart = new Chart(ctx,{
+
+        type:"line",
+
+        data:{
+
+            labels:labels,
+
+            datasets:datasets
+        },
+
+        options:{
+
+            responsive:true,
+
+            interaction:{
+                mode:"index",
+                intersect:false
+            },
+
+            plugins:{
+
+                legend:{
+                    position:"top"
+                }
+            },
+
+            scales:{
+
+                y:{
+
+                    ticks:{
+
+                        callback:function(value){
+
+                            return Math.round(value)
+                            .toLocaleString()
+                            + "円";
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+addStock();
+addSchedule();
+
+</script>
+
+<div class="card">
+
+<h2>計算方法と補正について</h2>
+
+<div class="small">
+
+<p>
+本シミュレーターはモンテカルロ法を用いて、100パターンの将来推移を生成しています。
+</p>
+
+<p>
+各銘柄ごとに、
+「平均リターン」と「平均リスク（標準偏差）」を用いて月次リターンを生成しています。
+</p>
+
+<p>
+単純に年率を12で割るのではなく、
+以下の補正を適用しています。
+</p>
+
+<ul>
+<li>年率 → 月率への変換</li>
+<li>リスク平方補正（Volatility Drag）</li>
+<li>月次標準偏差変換</li>
+<li>複利累積</li>
+</ul>
+
+<p>
+使用式：
+</p>
+
+<pre>
+月平均リターン =
+(1 + 年率リターン)^(1/12) - 1
+
+実効平均 =
+月平均 - (月リスク² / 2)
+</pre>
+
+<p>
+これにより、
+高リスク資産の過大評価を抑え、
+より現実的な中央値へ近づけています。
+</p>
+
+<p>
+参考値は過去実績ベースの近似値です。
+将来リターンを保証するものではありません。
+</p>
+
+<p>
+参考値出典例：
+SPIVA / Portfolio Visualizer / 各指数長期データ / ETF実績
+</p>
+
+</div>
+</body>
+</html>
