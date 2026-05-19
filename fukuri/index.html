@@ -1,7 +1,14 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<script> const CURRENT_TOOL = "fukuri"; </script> <script src="/js/tool-data.js"></script> <script src="/js/head.js"></script>
+
+<script>
+const CURRENT_TOOL = "fukuri";
+</script>
+
+<script src="/js/tool-data.js"></script>
+<script src="/js/head.js"></script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -158,6 +165,35 @@ summary{
     width:auto;
 }
 
+/* =========================
+   グラフ修正
+========================= */
+
+.chart-wrapper{
+    position:relative;
+    width:100%;
+    height:420px;
+}
+
+@media (max-width: 600px){
+
+    .chart-wrapper{
+        height:320px;
+    }
+
+    .card{
+        padding:16px;
+    }
+
+    h1{
+        font-size:28px;
+    }
+
+    h2{
+        font-size:22px;
+    }
+}
+
 </style>
 </head>
 
@@ -250,7 +286,9 @@ summary{
 
     <div class="result" id="result"></div>
 
-    <canvas id="chart" height="120"></canvas>
+    <div class="chart-wrapper">
+        <canvas id="chart"></canvas>
+    </div>
 
 </div>
 
@@ -302,22 +340,7 @@ function createReferenceHTML(index){
     });
 
     html += `
-
-        <div class="small" style="margin-top:10px;">
-
-        参考値出典：<br>
-        ・MSCI<br>
-        ・NASDAQ指数長期実績<br>
-        ・S&P Dow Jones Indices<br>
-        ・Bloomberg<br>
-        ・過去20〜30年程度の年率平均値を簡易化した参考値<br><br>
-
-        実際の将来リターンを保証するものではありません。
-
         </div>
-
-        </div>
-
     </details>
     `;
 
@@ -417,14 +440,10 @@ function refreshStockButtons(){
         const btn =
         row.querySelector(".remove-btn");
 
-        if(rows.length <= 1){
-
-            btn.style.display = "none";
-
-        }else{
-
-            btn.style.display = "block";
-        }
+        btn.style.display =
+        rows.length <= 1
+        ? "none"
+        : "block";
     });
 }
 
@@ -463,42 +482,6 @@ function addSchedule(){
             value="50000">
         </div>
 
-        <div>
-            <label>ボーナス投資</label>
-
-            <select class="bonus-enabled"
-            onchange="toggleBonus(this)">
-
-                <option value="none">なし</option>
-                <option value="yes">あり</option>
-
-            </select>
-
-        </div>
-
-    </div>
-
-    <div class="bonus-fields hidden"
-    style="margin-top:15px;">
-
-        <div class="grid">
-
-            <div>
-                <label>年何回</label>
-                <input type="number"
-                class="bonus-times"
-                value="2">
-            </div>
-
-            <div>
-                <label>1回あたり (円)</label>
-                <input type="number"
-                class="bonus-amount"
-                value="100000">
-            </div>
-
-        </div>
-
     </div>
 
     `;
@@ -528,33 +511,11 @@ function refreshScheduleButtons(){
         const btn =
         row.querySelector(".remove-btn");
 
-        if(rows.length <= 1){
-
-            btn.style.display = "none";
-
-        }else{
-
-            btn.style.display = "block";
-        }
+        btn.style.display =
+        rows.length <= 1
+        ? "none"
+        : "block";
     });
-}
-
-function toggleBonus(select){
-
-    const row =
-    select.closest(".schedule-row");
-
-    const fields =
-    row.querySelector(".bonus-fields");
-
-    if(select.value === "yes"){
-
-        fields.classList.remove("hidden");
-
-    }else{
-
-        fields.classList.add("hidden");
-    }
 }
 
 function randn_bm(){
@@ -621,16 +582,7 @@ function runSimulation(){
             Number(row.querySelector(".schedule-age").value),
 
             amount:
-            Number(row.querySelector(".schedule-amount").value),
-
-            bonusEnabled:
-            row.querySelector(".bonus-enabled").value,
-
-            bonusTimes:
-            Number(row.querySelector(".bonus-times")?.value || 0),
-
-            bonusAmount:
-            Number(row.querySelector(".bonus-amount")?.value || 0)
+            Number(row.querySelector(".schedule-amount").value)
 
         });
     });
@@ -644,7 +596,6 @@ function runSimulation(){
     for(let sim=0; sim<100; sim++){
 
         let asset = 0;
-
         let principal = 0;
 
         const yearly = [];
@@ -655,23 +606,11 @@ function runSimulation(){
 
             let currentMonthly = 0;
 
-            let bonusEnabled = "none";
-
-            let bonusTimes = 0;
-
-            let bonusAmount = 0;
-
             schedules.forEach(s=>{
 
                 if(age >= s.age){
 
                     currentMonthly = s.amount;
-
-                    bonusEnabled = s.bonusEnabled;
-
-                    bonusTimes = s.bonusTimes;
-
-                    bonusAmount = s.bonusAmount;
                 }
             });
 
@@ -681,15 +620,12 @@ function runSimulation(){
 
                 stocks.forEach(stock=>{
 
-                    // 幾何平均ベースへ補正
                     const monthlyMean =
                     Math.pow(1 + stock.ret, 1/12) - 1;
 
-                    // 月次ボラ
                     const monthlyVol =
                     stock.risk / Math.sqrt(12);
 
-                    // ボラティリティドラッグ補正
                     const adjustedMean =
                     monthlyMean
                     -
@@ -697,7 +633,6 @@ function runSimulation(){
                         monthlyVol * monthlyVol / 2
                     );
 
-                    // 正規乱数
                     const monthlyReturn =
                     adjustedMean
                     +
@@ -717,16 +652,6 @@ function runSimulation(){
                 asset *= (1 + totalMonthlyReturn);
 
                 asset = Math.max(asset, 0);
-            }
-
-            if(bonusEnabled === "yes"){
-
-                const yearlyBonus =
-                bonusTimes * bonusAmount;
-
-                principal += yearlyBonus;
-
-                asset += yearlyBonus;
             }
 
             yearly.push(
@@ -877,7 +802,9 @@ function runSimulation(){
     }
 
     const ctx =
-    document.getElementById("chart");
+    document
+    .getElementById("chart")
+    .getContext("2d");
 
     if(chart){
 
@@ -898,6 +825,7 @@ function runSimulation(){
         options:{
 
             responsive:true,
+            maintainAspectRatio:false,
 
             interaction:{
                 mode:"index",
@@ -912,6 +840,14 @@ function runSimulation(){
             },
 
             scales:{
+
+                x:{
+                    ticks:{
+                        maxRotation:0,
+                        autoSkip:true,
+                        maxTicksLimit:5
+                    }
+                },
 
                 y:{
 
@@ -935,64 +871,33 @@ addSchedule();
 
 </script>
 
-<div class="card">
+<div class="card"> 
 
-<h2>計算方法と補正について</h2>
+<h2>計算方法と補正について</h2> 
 
-<div class="small">
+<div class="small"> 
 
-<p>
-本シミュレーターはモンテカルロ法を用いて、100パターンの将来推移を生成しています。
-</p>
-
-<p>
-各銘柄ごとに、
-「平均リターン」と「平均リスク（標準偏差）」を用いて月次リターンを生成しています。
-</p>
-
-<p>
-単純に年率を12で割るのではなく、
-以下の補正を適用しています。
-</p>
-
+<p> 本シミュレーターはモンテカルロ法を用いて、100パターンの将来推移を生成しています。 </p> 
+<p> 各銘柄ごとに、 「平均リターン」と「平均リスク（標準偏差）」を用いて月次リターンを生成しています。 </p> 
+<p> 単純に年率を12で割るのではなく、 以下の補正を適用しています。 </p> 
 <ul>
-<li>年率 → 月率への変換</li>
+<li>年率 → 月率への変換</li> 
 <li>リスク平方補正（Volatility Drag）</li>
 <li>月次標準偏差変換</li>
 <li>複利累積</li>
 </ul>
-
-<p>
-使用式：
-</p>
-
-<pre>
-月平均リターン =
-(1 + 年率リターン)^(1/12) - 1
-
-実効平均 =
-月平均 - (月リスク² / 2)
-</pre>
-
-<p>
-これにより、
-高リスク資産の過大評価を抑え、
-より現実的な中央値へ近づけています。
-</p>
-
-<p>
-参考値は過去実績ベースの近似値です。
-将来リターンを保証するものではありません。
-</p>
-
-<p>
-参考値出典例：
-SPIVA / Portfolio Visualizer / 各指数長期データ / ETF実績
-</p>
+<p> 使用式： </p>
+<pre> 月平均リターン = (1 + 年率リターン)^(1/12) - 1 実効平均 = 月平均 - (月リスク² / 2) </pre>
+<p> これにより、 高リスク資産の過大評価を抑え、 より現実的な中央値へ近づけています。 </p>
+<p> 参考値は過去実績ベースの近似値です。 将来リターンを保証するものではありません。 </p>
+<p> 参考値出典例： SPIVA / Portfolio Visualizer / 各指数長期データ / ETF実績 </p>
+</div>
 
 </div>
 
 <div id="related-tools"></div>
+
 <script src="/js/related.js"></script>
+
 </body>
 </html>
