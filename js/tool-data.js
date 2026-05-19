@@ -23,7 +23,8 @@ window.TOOLS = [
     category: "life",
     url: "/h_roulette/"
   },
-  
+
+  {
     id: "fukuri",
     title: "複利計算・積立シュミレーター",
     desc: "細かな設定が豊富な複利計算・投資信託などの積立をシュミレーションするツール。",
