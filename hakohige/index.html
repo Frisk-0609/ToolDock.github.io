@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  const CURRENT_TOOL = "boxplot";
+</script>
+<script src="/js/tool-data.js"></script>
+<script src="/js/head.js"></script>
+
+<title>箱ひげ図 作成ツール｜五数要約から画像出力</title>
+
+<meta name="description"
+      content="最大値・第三四分位数・中央値・第一四分位数・最小値・平均値から、きれいな箱ひげ図を作成できる無料ツールです。PNG画像として保存可能。">
+
+<meta name="keywords"
+      content="箱ひげ図,ボックスプロット,四分位数,統計,グラフ,中央値,平均値,数学,データ分析">
+
+<style>
+  body{
+    font-family: sans-serif;
+    margin: 20px;
+    line-height: 1.7;
+    background: #f7f8fb;
+    color: #222;
+  }
+
+  h1{
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  .description{
+    max-width: 900px;
+    margin: 0 auto 25px;
+    text-align: center;
+    color: #555;
+  }
+
+  .container{
+    max-width: 950px;
+    margin: auto;
+    background: white;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+  }
+
+  .grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .input-group{
+    display: flex;
+    flex-direction: column;
+  }
+
+  label{
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+
+  input{
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+  }
+
+  .checkbox-row{
+    margin: 10px 0 20px;
+  }
+
+  button{
+    padding: 12px 18px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    transition: 0.2s;
+  }
+
+  button:hover{
+    transform: translateY(-1px);
+  }
+
+  .draw-btn{
+    background: #2563eb;
+    color: white;
+  }
+
+  .download-btn{
+    background: #16a34a;
+    color: white;
+  }
+
+  .reset-btn{
+    background: #666;
+    color: white;
+  }
+
+  .canvas-wrapper{
+    margin-top: 20px;
+    overflow-x: auto;
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid #ddd;
+  }
+
+  canvas{
+    width: 100%;
+    max-width: 100%;
+    background: white;
+  }
+
+  .error{
+    color: #dc2626;
+    font-weight: bold;
+    margin-top: 10px;
+  }
+
+  .info{
+    margin-top: 35px;
+    background: #eef4ff;
+    border-left: 5px solid #2563eb;
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  @media (max-width: 600px){
+
+    body{
+      margin: 12px;
+    }
+
+    .container{
+      padding: 18px;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<h1>箱ひげ図 作成ツール</h1>
+
+<p class="description">
+最大値・第三四分位数・中央値・第一四分位数・最小値から、
+きれいな箱ひげ図（ボックスプロット）を自動生成できます。
+平均値も任意で表示可能です。
+</p>
+
+<div class="container">
+
+  <div class="grid">
+
+    <div class="input-group">
+      <label for="max">最大値</label>
+      <input type="number" id="max" value="100">
+    </div>
+
+    <div class="input-group">
+      <label for="q3">第三四分位数(Q3)</label>
+      <input type="number" id="q3" value="75">
+    </div>
+
+    <div class="input-group">
+      <label for="median">中央値</label>
+      <input type="number" id="median" value="50">
+    </div>
+
+    <div class="input-group">
+      <label for="q1">第一四分位数(Q1)</label>
+      <input type="number" id="q1" value="25">
+    </div>
+
+    <div class="input-group">
+      <label for="min">最小値</label>
+      <input type="number" id="min" value="0">
+    </div>
+
+    <div class="input-group">
+      <label for="mean">平均値（任意）</label>
+      <input type="number" id="mean" placeholder="例: 52">
+    </div>
+
+  </div>
+
+  <div class="checkbox-row">
+    <label>
+      <input type="checkbox" id="showMean" checked>
+      平均値を表示する
+    </label>
+  </div>
+
+  <button class="draw-btn" onclick="drawBoxPlot()">
+    箱ひげ図を描画
+  </button>
+
+  <button class="download-btn" onclick="downloadImage()">
+    PNG画像として保存
+  </button>
+
+  <button class="reset-btn" onclick="resetInputs()">
+    リセット
+  </button>
+
+  <div id="error" class="error"></div>
+
+  <div class="canvas-wrapper">
+    <canvas id="chart" width="1200" height="500"></canvas>
+  </div>
+
+  <div class="info">
+    <strong>入力条件：</strong><br>
+    最小値 ≤ 第一四分位数 ≤ 中央値 ≤ 第三四分位数 ≤ 最大値
+  </div>
+
+</div>
+
+<h2>箱ひげ図とは？</h2>
+
+<p>
+箱ひげ図（ボックスプロット）は、
+データの分布を視覚的に表現する統計グラフです。
+中央値、四分位数、最大値、最小値をまとめて表示できます。
+</p>
+
+<p>
+高校数学「データの読み取りと分析」や、
+統計学、データ分析、大学レポート、研究などで広く使えます。
+このツールでは、中央値、四分位数、最大値、最小値を入力して、
+奇麗な箱ひげ図を作成できます。
+</p>
+
+<div id="related-tools"></div>
+<script src="/js/related.js"></script>
+
+<script>
+const canvas = document.getElementById("chart");
+const ctx = canvas.getContext("2d");
+
+function getValues() {
+
+  const meanValue = document.getElementById("mean").value;
+
+  return {
+    max: Number(document.getElementById("max").value),
+    q3: Number(document.getElementById("q3").value),
+    median: Number(document.getElementById("median").value),
+    q1: Number(document.getElementById("q1").value),
+    min: Number(document.getElementById("min").value),
+
+    mean:
+      meanValue === ""
+      ? null
+      : Number(meanValue),
+
+    showMean: document.getElementById("showMean").checked
+  };
+}
+
+function validate(v) {
+
+  return (
+    v.min <= v.q1 &&
+    v.q1 <= v.median &&
+    v.median <= v.q3 &&
+    v.q3 <= v.max
+  );
+}
+
+function drawBoxPlot() {
+
+  const error = document.getElementById("error");
+  error.textContent = "";
+
+  const v = getValues();
+
+  if (!validate(v)) {
+
+    error.textContent =
+      "入力値の大小関係が正しくありません。";
+
+    return;
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "white";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const left = 100;
+  const right = 1100;
+  const centerY = 250;
+
+  const range = v.max - v.min || 1;
+
+  function scale(x) {
+    return left + ((x - v.min) / range) * (right - left);
+  }
+
+  const xMin = scale(v.min);
+  const xQ1 = scale(v.q1);
+  const xMedian = scale(v.median);
+  const xQ3 = scale(v.q3);
+  const xMax = scale(v.max);
+
+  // 軸
+  ctx.strokeStyle = "#222";
+  ctx.lineWidth = 3;
+
+  ctx.beginPath();
+  ctx.moveTo(left, centerY);
+  ctx.lineTo(right, centerY);
+  ctx.stroke();
+
+  // ひげ
+  ctx.beginPath();
+  ctx.moveTo(xMin, centerY);
+  ctx.lineTo(xQ1, centerY);
+
+  ctx.moveTo(xQ3, centerY);
+  ctx.lineTo(xMax, centerY);
+  ctx.stroke();
+
+  // 箱
+  ctx.fillStyle = "#93c5fd";
+  ctx.strokeStyle = "#2563eb";
+  ctx.lineWidth = 4;
+
+  ctx.fillRect(
+    xQ1,
+    centerY - 60,
+    xQ3 - xQ1,
+    120
+  );
+
+  ctx.strokeRect(
+    xQ1,
+    centerY - 60,
+    xQ3 - xQ1,
+    120
+  );
+
+  // 中央値
+  ctx.strokeStyle = "#dc2626";
+  ctx.lineWidth = 5;
+
+  ctx.beginPath();
+  ctx.moveTo(xMedian, centerY - 60);
+  ctx.lineTo(xMedian, centerY + 60);
+  ctx.stroke();
+
+  // 最小値・最大値の縦線
+  ctx.strokeStyle = "#222";
+  ctx.lineWidth = 4;
+
+  [xMin, xMax].forEach(x => {
+
+    ctx.beginPath();
+    ctx.moveTo(x, centerY - 35);
+    ctx.lineTo(x, centerY + 35);
+    ctx.stroke();
+
+  });
+
+  // 平均値（＋表示）
+  if (
+    v.showMean &&
+    v.mean !== null &&
+    !isNaN(v.mean)
+  ) {
+
+    const xMean = scale(v.mean);
+
+    ctx.strokeStyle = "#16a34a";
+    ctx.lineWidth = 5;
+
+    const size = 16;
+
+    // 横線
+    ctx.beginPath();
+    ctx.moveTo(xMean - size, centerY);
+    ctx.lineTo(xMean + size, centerY);
+    ctx.stroke();
+
+    // 縦線
+    ctx.beginPath();
+    ctx.moveTo(xMean, centerY - size);
+    ctx.lineTo(xMean, centerY + size);
+    ctx.stroke();
+
+    // ラベル
+    ctx.fillStyle = "#16a34a";
+    ctx.font = "24px sans-serif";
+
+    ctx.fillText(
+      "平均",
+      xMean - 22,
+      centerY - 80
+    );
+  }
+
+  // 数値ラベル
+  ctx.fillStyle = "#111";
+  ctx.font = "24px sans-serif";
+
+  const labels = [
+    [xMin, v.min],
+    [xQ1, v.q1],
+    [xMedian, v.median],
+    [xQ3, v.q3],
+    [xMax, v.max]
+  ];
+
+  labels.forEach(([x, value]) => {
+
+    ctx.fillText(
+      value,
+      x - 15,
+      centerY + 100
+    );
+
+  });
+
+  // タイトル
+  ctx.font = "bold 34px sans-serif";
+  ctx.fillText("箱ひげ図", 40, 60);
+}
+
+function downloadImage() {
+
+  const link = document.createElement("a");
+
+  link.download = "boxplot.png";
+  link.href = canvas.toDataURL("image/png");
+
+  link.click();
+}
+
+function resetInputs() {
+
+  document.getElementById("max").value = 100;
+  document.getElementById("q3").value = 75;
+  document.getElementById("median").value = 50;
+  document.getElementById("q1").value = 25;
+  document.getElementById("min").value = 0;
+  document.getElementById("mean").value = "";
+
+  document.getElementById("showMean").checked = true;
+
+  drawBoxPlot();
+}
+
+drawBoxPlot();
+</script>
+
+</body>
+</html>
