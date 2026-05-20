@@ -97,6 +97,14 @@ window.TOOLS = [
   },
 
   {
+    id: "hakohige",
+    title: "きれいな箱ひげ図を描写するツール",
+    desc: "最小値・第一四分位数・中央値・第三四分位数・最大値を入力し、きれいに箱ひげ図を描くツールです。",
+    category: "math",
+    url: "/hakohige/"
+  },
+
+  {
     id: "matrix",
     title: "行列計算ツール",
     desc: "行列の計算（逆行列・正規化・固有値など）を行うツール。",
