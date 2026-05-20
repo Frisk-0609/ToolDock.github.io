@@ -11,7 +11,7 @@ if (container && relatedTools.length > 0) {
   container.innerHTML = `
 
     <section class="related-tools-section">
-      <h2>関連ツール</h2>
+      <h2>同じカテゴリのツール</h2>
 
       <div class="related-tools-grid">
 
